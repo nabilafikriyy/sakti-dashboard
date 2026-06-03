@@ -1,0 +1,2738 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAKTI – Sistem Analitik Kesehatan Terintegrasi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+.map-card{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:14px}
+.map-wrap{height:360px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0}
+.leaflet-popup-content-wrapper{font-family:'Inter',sans-serif;font-size:.8rem;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.leaflet-popup-content{margin:10px 14px;line-height:1.6}
+.popup-title{font-weight:700;color:#1e293b;font-size:.85rem;margin-bottom:4px}
+.popup-row{display:flex;justify-content:space-between;gap:16px;color:#64748b;font-size:.75rem}
+.popup-val{font-weight:600;color:#1e293b}
+.map-legend{display:flex;align-items:center;gap:14px;margin-top:8px;font-size:.72rem;color:#64748b;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.map-yr-sel,.yr-tabs-sm{display:flex;gap:4px}
+/* CETAK ACCORDION */
+.cetak-bidang-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;font-size:0.83rem;font-weight:600;color:#1e293b;border-bottom:1px solid #f1f5f9;transition:background 0.12s}
+.cetak-bidang-header:hover{background:#f8fafc}
+.cbh-arrow{font-size:0.7rem;color:#94a3b8;transition:transform 0.2s}
+.cbh-arrow.open{transform:rotate(90deg)}
+.cetak-bidang-body{display:none;border-bottom:1px solid #f1f5f9}
+.cetak-bidang-body.open{display:block}
+.cetak-check-item{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;font-size:0.78rem;transition:background 0.1s}
+.cetak-check-item.available{cursor:pointer}
+.cetak-check-item.available:hover{background:#f0fdf4}
+.cetak-check-item.disabled{opacity:0.45;cursor:not-allowed}
+.cetak-check-item input[type=checkbox]{width:15px;height:15px;flex-shrink:0;accent-color:#3b82f6}
+.ck-title{font-weight:600;color:#1e293b;line-height:1.3}
+.ck-sub{font-size:0.68rem;color:#94a3b8;margin-top:1px}
+.ck-badge{margin-left:auto;font-size:0.62rem;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.ck-badge.ok{background:#dcfce7;color:#16a34a}
+.ck-badge.no{background:#f1f5f9;color:#94a3b8}
+
+/* ── CATATAN PIMPINAN ── */
+.catatan-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:20px; margin-bottom:14px; transition:box-shadow 0.15s; }
+.catatan-card:hover { box-shadow:0 2px 12px rgba(0,0,0,0.06); }
+.catatan-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.catatan-author { font-size:0.75rem; font-weight:600; color:#1e3a5f; background:#eff6ff; padding:3px 9px; border-radius:5px; }
+.catatan-waktu { font-size:0.72rem; color:#94a3b8; }
+.catatan-prioritas { font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:4px; }
+.pri-tinggi { background:#fee2e2; color:#dc2626; }
+.pri-sedang { background:#fef3c7; color:#d97706; }
+.pri-rendah { background:#dcfce7; color:#16a34a; }
+.catatan-isi { font-size:0.83rem; color:#334155; line-height:1.65; margin-bottom:10px; white-space:pre-wrap; }
+.catatan-actions { display:flex; gap:8px; }
+.btn-edit { padding:4px 12px; font-size:0.72rem; font-weight:600; border:1px solid #3b82f6; color:#3b82f6; background:white; border-radius:5px; cursor:pointer; font-family:inherit; transition:all 0.12s; }
+.btn-edit:hover { background:#eff6ff; }
+.btn-hapus { padding:4px 12px; font-size:0.72rem; font-weight:600; border:1px solid #ef4444; color:#ef4444; background:white; border-radius:5px; cursor:pointer; font-family:inherit; transition:all 0.12s; }
+.btn-hapus:hover { background:#fff1f2; }
+.catatan-form { background:white; border:1.5px solid #3b82f6; border-radius:10px; padding:20px; margin-bottom:14px; }
+.catatan-form textarea { width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.84rem; font-family:'Inter',sans-serif; color:#1e293b; resize:vertical; min-height:100px; outline:none; box-sizing:border-box; transition:border-color 0.15s; }
+.catatan-form textarea:focus { border-color:#3b82f6; }
+.catatan-form select { padding:8px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.82rem; font-family:'Inter',sans-serif; color:#1e293b; outline:none; background:white; cursor:pointer; }
+.btn-simpan { padding:8px 20px; background:#1e3a5f; color:white; border:none; border-radius:7px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s; }
+.btn-simpan:hover { background:#1e40af; }
+.btn-batal { padding:8px 16px; background:white; color:#64748b; border:1px solid #e2e8f0; border-radius:7px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; }
+.catatan-empty { text-align:center; padding:48px; color:#94a3b8; }
+
+@media print {
+  .topbar,.sidebar,.breadcrumb,.nav-item,
+  button, input[type=checkbox], label,
+  .chart-card, .map-card, .kpi-row,
+  #page-ringkasan, #page-p2pl, #page-kesmas,
+  #page-yankes, #page-sdk, #page-dbd,
+  #page-stunting, #page-campak { display:none !important; }
+  .page#page-cetak { display:block !important; }
+  .app-body { display:block !important; }
+  .main { overflow:visible !important; }
+  .content { padding:0 !important; }
+  body { background:white !important; overflow:visible !important; height:auto !important; }
+  #area-cetak > div { break-inside:avoid; margin-bottom:12px; }
+  table { font-size:0.72rem; }
+  .tbl-wrap { overflow:visible !important; }
+}
+</style>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#f0f2f5; color:#1e293b; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background:#1e3a5f; color:white;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; height:56px; flex-shrink:0; z-index:100;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.topbar-left { display:flex; align-items:center; gap:12px; }
+.logo-box {
+  background:#3b82f6; color:white; font-weight:700; font-size:0.85rem;
+  padding:5px 10px; border-radius:6px; letter-spacing:0.05em;
+}
+.topbar-title { font-size:0.95rem; font-weight:600; line-height:1.3; }
+.topbar-sub { font-size:0.72rem; color:rgba(255,255,255,0.6); font-weight:400; }
+.topbar-right { display:flex; align-items:center; gap:16px; font-size:0.8rem; }
+.status-badge { display:flex; align-items:center; gap:6px; }
+.status-dot { width:8px; height:8px; background:#22c55e; border-radius:50%; }
+.user-info { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,0.85); }
+.user-icon { width:28px; height:28px; background:rgba(255,255,255,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+/* ── LAYOUT ── */
+.app-body { display:flex; flex:1; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:220px; background:#1a2e4a; color:white;
+  display:flex; flex-direction:column; flex-shrink:0;
+  overflow-y:auto;
+}
+.sidebar-section { padding:16px 12px 4px; font-size:0.65rem; font-weight:600; letter-spacing:0.1em; color:rgba(255,255,255,0.35); text-transform:uppercase; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 16px; margin:1px 8px; border-radius:7px;
+  font-size:0.82rem; font-weight:500; cursor:pointer; color:rgba(255,255,255,0.7);
+  transition:all 0.15s; position:relative;
+}
+.nav-item:hover { background:rgba(255,255,255,0.07); color:white; }
+.nav-item.active { background:rgba(59,130,246,0.25); color:#93c5fd; }
+.nav-item .icon { font-size:15px; width:18px; text-align:center; }
+.nav-badge { margin-left:auto; background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); font-size:0.6rem; padding:2px 6px; border-radius:4px; }
+.sidebar-footer { margin-top:auto; padding:12px 16px; font-size:0.65rem; color:rgba(255,255,255,0.25); border-top:1px solid rgba(255,255,255,0.06); }
+
+/* ── MAIN ── */
+.main { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+
+/* ── BREADCRUMB ── */
+.breadcrumb { background:white; border-bottom:1px solid #e2e8f0; padding:10px 24px; font-size:0.78rem; color:#64748b; display:flex; align-items:center; gap:6px; }
+.breadcrumb span { color:#3b82f6; cursor:pointer; }
+.breadcrumb span:hover { text-decoration:underline; }
+
+/* ── CONTENT WRAPPER ── */
+.content { padding:24px; flex:1; }
+
+/* ── PAGE: MENU CARDS ── */
+.page-header { margin-bottom:20px; }
+.page-header h1 { font-size:1.35rem; font-weight:700; color:#1e293b; margin-bottom:4px; }
+.page-header p { font-size:0.82rem; color:#64748b; }
+
+.menu-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.menu-card {
+  background:white; border:1.5px solid #e2e8f0; border-radius:12px;
+  padding:24px 20px; cursor:pointer; transition:all 0.2s;
+  display:flex; flex-direction:column; gap:8px;
+}
+.menu-card:hover { border-color:#3b82f6; box-shadow:0 4px 16px rgba(59,130,246,0.12); transform:translateY(-2px); }
+.menu-card.available { border-color:#22c55e; }
+.menu-card.active-card { border-color:#3b82f6; background:#eff6ff; }
+.menu-card-title { font-size:1rem; font-weight:700; color:#1e293b; }
+.menu-card-sub { font-size:0.75rem; color:#64748b; }
+.menu-card-badge {
+  display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.7rem; font-weight:600; margin-top:4px; width:fit-content;
+}
+.badge-available { background:#dcfce7; color:#16a34a; }
+.badge-empty { background:#f1f5f9; color:#94a3b8; }
+
+/* ── DASHBOARD PAGE ── */
+.dash-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.dash-title { font-size:1.2rem; font-weight:700; color:#1e293b; }
+.dash-sub { font-size:0.78rem; color:#64748b; margin-top:2px; }
+.year-tabs { display:flex; gap:4px; }
+.yr-btn {
+  padding:5px 14px; border-radius:6px; border:1px solid #e2e8f0;
+  background:white; color:#64748b; font-size:0.78rem; font-weight:500;
+  cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s;
+}
+.yr-btn:hover { border-color:#3b82f6; color:#3b82f6; }
+.yr-btn.active { background:#3b82f6; border-color:#3b82f6; color:white; }
+
+/* ── KPI ROW ── */
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.kpi-card {
+  background:white; border:1px solid #e2e8f0; border-radius:10px;
+  padding:16px 18px; border-top:3px solid transparent;
+}
+.kpi-card.red { border-top-color:#ef4444; }
+.kpi-card.blue { border-top-color:#3b82f6; }
+.kpi-card.green { border-top-color:#22c55e; }
+.kpi-card.amber { border-top-color:#f59e0b; }
+.kpi-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; font-weight:600; margin-bottom:6px; }
+.kpi-val { font-size:1.6rem; font-weight:700; color:#1e293b; line-height:1; }
+.kpi-desc { font-size:0.72rem; color:#64748b; margin-top:4px; }
+
+/* ── CHART GRID ── */
+.chart-row { display:grid; gap:16px; margin-bottom:16px; }
+.chart-row.two { grid-template-columns:1fr 1fr; }
+.chart-row.one { grid-template-columns:1fr; }
+.chart-card {
+  background:white; border:1px solid #e2e8f0; border-radius:10px; padding:18px;
+}
+.chart-card-title { font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:2px; }
+.chart-card-sub { font-size:0.72rem; color:#94a3b8; margin-bottom:14px; }
+.chart-wrap { position:relative; }
+.chart-wrap.h240 { height:240px; }
+.chart-wrap.h200 { height:200px; }
+.chart-wrap.h280 { height:280px; }
+.chart-wrap.h320 { height:320px; }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+thead th { background:#f8fafc; color:#64748b; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; padding:9px 12px; border-bottom:1px solid #e2e8f0; text-align:left; white-space:nowrap; }
+tbody tr { border-bottom:1px solid #f1f5f9; transition:background 0.1s; }
+tbody tr:hover { background:#f8fafc; }
+tbody td { padding:8px 12px; color:#334155; }
+.tbl-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.68rem; font-weight:600; }
+.tbl-badge.hi { background:#fee2e2; color:#dc2626; }
+.tbl-badge.md { background:#fef3c7; color:#d97706; }
+.tbl-badge.lo { background:#dcfce7; color:#16a34a; }
+.trend-up { color:#ef4444; font-weight:600; }
+.trend-dn { color:#16a34a; font-weight:600; }
+
+/* ── LOADING ── */
+.loading-overlay { display:flex; align-items:center; justify-content:center; height:200px; gap:10px; color:#94a3b8; font-size:0.85rem; }
+.spinner { width:18px; height:18px; border:2px solid #e2e8f0; border-top-color:#3b82f6; border-radius:50%; animation:spin 0.6s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.page { display:none; }
+.page.active { display:block; animation:fadeIn 0.25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+@media(max-width:900px) {
+  .kpi-row,.menu-grid { grid-template-columns:repeat(2,1fr); }
+  .chart-row.two { grid-template-columns:1fr; }
+  .sidebar { display:none; }
+}
+
+/* ── LOGIN OVERLAY ── */
+#login-overlay {
+  position:fixed; inset:0; background:#0f172a;
+  display:flex; align-items:center; justify-content:center;
+  z-index:9999; flex-direction:column; gap:0;
+}
+.login-box {
+  background:white; border-radius:16px; padding:36px 40px;
+  width:100%; max-width:400px; box-shadow:0 24px 64px rgba(0,0,0,0.4);
+}
+.login-logo { display:flex; align-items:center; gap:10px; margin-bottom:28px; }
+.login-logo-box { background:#1e3a5f; color:white; font-weight:700; font-size:1rem; padding:7px 13px; border-radius:8px; }
+.login-title { font-size:1.15rem; font-weight:700; color:#1e293b; }
+.login-sub { font-size:0.75rem; color:#64748b; margin-top:2px; }
+.login-step { display:none; }
+.login-step.active { display:block; }
+.login-label { font-size:0.78rem; font-weight:600; color:#475569; margin-bottom:6px; display:block; }
+.login-input {
+  width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:8px;
+  font-size:0.88rem; font-family:'Inter',sans-serif; color:#1e293b; outline:none;
+  transition:border-color 0.15s; margin-bottom:14px;
+  box-sizing:border-box; display:block;
+}
+.login-input:focus { border-color:#3b82f6; }
+.login-input.error { border-color:#ef4444; }
+.login-btn {
+  width:100%; padding:11px; background:#1e3a5f; color:white; border:none;
+  border-radius:8px; font-size:0.88rem; font-weight:600; cursor:pointer;
+  font-family:'Inter',sans-serif; transition:background 0.15s;
+}
+.login-btn:hover { background:#1e40af; }
+.login-error { font-size:0.75rem; color:#ef4444; margin-top:8px; display:none; }
+.login-step-ind {
+  display:flex; align-items:center; gap:8px; margin-bottom:22px;
+}
+.step-dot {
+  width:8px; height:8px; border-radius:50%; background:#e2e8f0;
+}
+.step-dot.done { background:#22c55e; }
+.step-dot.active { background:#3b82f6; }
+.step-line { flex:1; height:2px; background:#e2e8f0; }
+.step-line.done { background:#22c55e; }
+.otp-grid { display:grid; grid-template-columns:repeat(6,50px); gap:8px; margin-bottom:14px; justify-content:center; }
+.otp-input {
+  text-align:center; padding:12px 4px; border:1.5px solid #e2e8f0; border-radius:8px;
+  font-size:1.1rem; font-weight:700; font-family:'Inter',sans-serif; outline:none;
+  transition:border-color 0.15s;
+}
+.otp-input:focus { border-color:#3b82f6; }
+.otp-hint {
+  background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;
+  padding:10px 13px; font-size:0.76rem; color:#1e40af; margin-bottom:14px;
+  line-height:1.5;
+}
+
+/* ── USER DROPDOWN ── */
+.user-menu { position:relative; }
+.user-btn {
+  display:flex; align-items:center; gap:7px; cursor:pointer;
+  padding:5px 10px; border-radius:8px; transition:background 0.15s;
+  color:rgba(255,255,255,0.85); font-size:0.8rem;
+}
+.user-btn:hover { background:rgba(255,255,255,0.1); }
+.user-dropdown {
+  display:none; position:absolute; top:calc(100% + 8px); right:0;
+  background:white; border:1px solid #e2e8f0; border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:200px; z-index:200;
+  overflow:hidden;
+}
+.user-dropdown.open { display:block; animation:fadeUp 0.15s ease; }
+.ud-header {
+  padding:14px 16px; border-bottom:1px solid #f1f5f9;
+  font-size:0.78rem; color:#64748b;
+}
+.ud-name { font-weight:700; color:#1e293b; font-size:0.88rem; }
+.ud-role { font-size:0.72rem; color:#94a3b8; margin-top:2px; }
+.ud-item {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  font-size:0.8rem; color:#475569; cursor:pointer; transition:background 0.12s;
+}
+.ud-item:hover { background:#f8fafc; }
+.ud-item.danger { color:#ef4444; }
+.ud-item.danger:hover { background:#fff1f2; }
+.ud-sep { height:1px; background:#f1f5f9; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-box">SAKTI</div>
+      <div>
+        <div class="login-title">Masuk ke SAKTI</div>
+        <div class="login-sub">Sistem Analitik Kesehatan Terintegrasi</div>
+      </div>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="login-step-ind">
+      <div class="step-dot active" id="sd1"></div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2"></div>
+    </div>
+
+    <!-- STEP 1: Username + Password -->
+    <div class="login-step active" id="login-step1">
+      <div style="font-size:0.82rem;font-weight:600;color:#475569;margin-bottom:16px">Langkah 1 — Identitas Pengguna</div>
+      <label class="login-label">Username</label>
+      <input class="login-input" id="inp-user" type="text" placeholder="Masukkan username" autocomplete="username">
+      <label class="login-label">Password</label>
+      <div style="position:relative;margin-bottom:14px">
+        <input class="login-input" id="inp-pass" type="password" placeholder="Masukkan password" autocomplete="current-password" style="margin-bottom:0;padding-right:44px">
+        <span id="toggle-pass" onclick="togglePassVis()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none;color:#94a3b8">👁</span>
+      </div>
+      <div class="login-error" id="err1">❌ Username atau password salah</div>
+      <button type="button" class="login-btn" onclick="doStep1()" style="margin-top:6px">Lanjut →</button>
+      <div style="margin-top:16px;padding:10px 13px;background:#f8fafc;border-radius:8px;font-size:0.72rem;color:#94a3b8;line-height:1.6">
+        Demo login: <b style="color:#475569">admin</b> / <b style="color:#475569">sakti2025</b>
+      </div>
+    </div>
+
+    <!-- STEP 2: OTP 2FA -->
+    <div class="login-step" id="login-step2">
+      <div style="font-size:0.82rem;font-weight:600;color:#475569;margin-bottom:10px">Langkah 2 — Verifikasi 2 Langkah</div>
+      <div class="otp-hint">
+        📱 Kode verifikasi telah dikirim ke perangkat terdaftar.<br>
+        <b>Kode demo: <span id="otp-display" style="color:#1e3a5f;letter-spacing:2px"></span></b>
+      </div>
+      <div style="font-size:0.75rem;color:#64748b;margin-bottom:8px">Masukkan 6 digit kode verifikasi</div>
+      <div class="otp-grid" id="otp-grid"></div>
+      <div class="login-error" id="err2">❌ Kode verifikasi salah atau kadaluarsa</div>
+      <button class="login-btn" onclick="doStep2()">Verifikasi &amp; Masuk</button>
+      <div style="text-align:center;margin-top:12px">
+        <span style="font-size:0.75rem;color:#94a3b8;cursor:pointer" onclick="backToStep1()">← Kembali ke login</span>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:20px;font-size:0.72rem;color:rgba(255,255,255,0.3)">
+    SAKTI v1.0 · Dinas Kesehatan Kabupaten Sleman · MIK A 2023 UGM Vocational College
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-box">SAKTI</div>
+    <div>
+      <div class="topbar-title">Sistem Analitik Kesehatan Terintegrasi</div>
+      <div class="topbar-sub">Dinas Kesehatan Kabupaten Sleman</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-badge"><span class="status-dot"></span> Data 2023–2025</div>
+    <!-- USER DROPDOWN -->
+    <div class="user-menu" id="user-menu">
+      <div class="user-btn" onclick="toggleUserMenu()">
+        <div class="user-icon">👤</div>
+        <span id="topbar-username">Kepala Dinas</span>
+        <span style="font-size:0.65rem;opacity:0.6">▾</span>
+      </div>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="ud-header">
+          <div class="ud-name" id="dd-name">Kepala Dinas</div>
+          <div class="ud-role">Administrator · SAKTI</div>
+        </div>
+        <div class="ud-sep"></div>
+        <div class="ud-item danger" onclick="doLogout()">🚪&nbsp; Keluar (Logout)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-body">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Beranda</div>
+    <div class="nav-item active" id="nav-ringkasan" onclick="goHome()"><span class="icon">⊞</span> Ringkasan</div>
+
+    <div class="sidebar-section">Bidang</div>
+    <div class="nav-item active" id="nav-p2pl" onclick="showBidang('p2pl')"><span class="icon">🛡</span> P2PL</div>
+    <div class="nav-item" id="nav-kesmas" onclick="showBidang('kesmas')"><span class="icon">🌿</span> Kes. Masyarakat</div>
+    <div class="nav-item" id="nav-yankes" onclick="showBidang('yankes')"><span class="icon">🏥</span> Yankes</div>
+    <div class="nav-item" id="nav-sdk" onclick="showBidang('sdk')"><span class="icon">📦</span> SDK</div>
+
+    <div class="sidebar-section">Laporan</div>
+    <div class="nav-item" id="nav-cetak" onclick="showCetak()"><span class="icon">🖨</span> Cetak Laporan</div>
+    <div class="nav-item" id="nav-catatan" onclick="showCatatan()"><span class="icon">📝</span> Catatan Pimpinan</div>
+
+    <div class="sidebar-footer">SAKTI v1.0 · MIK A 2023<br>UGM Vocational College</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="breadcrumb" id="breadcrumb">
+      <span onclick="goHome()">Beranda</span>
+    </div>
+
+    <div class="content">
+
+      <!-- ════════ PAGE: RINGKASAN ════════ -->
+      <div class="page active" id="page-ringkasan">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:3px">Ringkasan Kesehatan Kabupaten Sleman</h1>
+            <p style="font-size:0.8rem;color:#64748b">Data terakhir diperbarui: Mei 2025 · Sumber: Dinas Kesehatan Kab. Sleman</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:7px 14px;font-size:0.78rem;color:#16a34a;font-weight:500">
+            <span style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:inline-block"></span>
+            3 modul aktif
+          </div>
+        </div>
+
+        <!-- KPI UTAMA -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="rkp-kpi">
+          <!-- diisi JS -->
+        </div>
+
+        <!-- ALERT BARIS -->
+        <div id="rkp-alert" style="margin-bottom:20px"></div>
+
+        <!-- TREN + PERBANDINGAN -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Tren Kasus DBD Kabupaten</div>
+            <div class="chart-card-sub">Total kasus per tahun 2023–2025</div>
+            <div class="chart-wrap h220"><canvas id="rkp-dbd-tren"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Perbandingan 3 Penyakit</div>
+            <div class="chart-card-sub">Indeks relatif kasus 2025 (DBD · Campak · Stunting)</div>
+            <div class="chart-wrap h220"><canvas id="rkp-radar"></canvas></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Stunting — Rata-rata Kabupaten (%)</div>
+            <div class="chart-card-sub">Tren prevalensi stunting 2023–2025</div>
+            <div class="chart-wrap h200"><canvas id="rkp-stunting-tren"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Campak — Suspek vs Positif</div>
+            <div class="chart-card-sub">Total kabupaten per tahun</div>
+            <div class="chart-wrap h200"><canvas id="rkp-campak-bar"></canvas></div>
+          </div>
+        </div>
+
+        <!-- TOP PUSKESMAS BERMASALAH -->
+        <div class="chart-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+            <div class="chart-card-title" id="top5-title">⚠️ Top 5 Puskesmas — DBD (Tertinggi 2025)</div>
+            <div style="display:flex;gap:4px">
+              <button class="yr-btn active" onclick="switchTop5('2025',this)" style="font-size:0.72rem;padding:4px 10px">Tahun 2025</button>
+              <button class="yr-btn" onclick="switchTop5('rerata',this)" style="font-size:0.72rem;padding:4px 10px">Rerata 3 Tahun</button>
+              <button class="yr-btn" onclick="switchTop5('akhir',this)" style="font-size:0.72rem;padding:4px 10px">Akhir Tahun (2025)</button>
+            </div>
+          </div>
+          <div class="chart-card-sub" id="top5-sub">Puskesmas dengan kasus DBD tertinggi tahun 2025</div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Peringkat</th><th>Puskesmas</th><th>Kasus 2025</th><th>Kasus 2024</th><th>Kasus 2023</th><th>Rerata</th><th>Tren</th></tr></thead>
+            <tbody id="rkp-top-dbd"></tbody>
+          </table></div>
+        </div>
+
+        <!-- STATUS MODUL -->
+        <div class="chart-card">
+          <div class="chart-card-title">Status Ketersediaan Data Modul</div>
+          <div class="chart-card-sub">Modul yang sudah dan belum terintegrasi</div>
+          <div id="rkp-modul" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: CETAK LAPORAN -->
+      <div class="page" id="page-cetak">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:3px">🖨️ Cetak Laporan</h1>
+            <p style="font-size:0.8rem;color:#64748b">Pilih bidang → centang sub-bidang → klik Cetak</p>
+          </div>
+          <button onclick="cetakSekarang()" style="display:flex;align-items:center;gap:8px;background:#1e3a5f;color:white;border:none;border-radius:8px;padding:9px 20px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit">
+            🖨️ Cetak Sekarang
+          </button>
+        </div>
+
+        <!-- PANEL PILIHAN BIDANG (kiri) + PREVIEW (kanan) -->
+        <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start">
+
+          <!-- KIRI: Accordion bidang -->
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;position:sticky;top:16px">
+            <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;font-size:0.82rem;font-weight:700;color:#1e293b">
+              Pilih Laporan
+            </div>
+
+            <!-- P2PL -->
+            <div class="cetak-bidang-header" onclick="toggleCetakBidang('p2pl')" id="cbh-p2pl">
+              <span>🛡 P2PL</span><span class="cbh-arrow" id="cba-p2pl">▸</span>
+            </div>
+            <div class="cetak-bidang-body" id="cbb-p2pl">
+              <label class="cetak-check-item available">
+                <input type="checkbox" id="ck-dbd" onchange="updateCetakPreview()">
+                <div>
+                  <div class="ck-title">DBD</div>
+                  <div class="ck-sub">Demam Berdarah Dengue · P2</div>
+                </div>
+                <span class="ck-badge ok">data ada</span>
+              </label>
+              <label class="cetak-check-item available">
+                <input type="checkbox" id="ck-campak" onchange="updateCetakPreview()">
+                <div>
+                  <div class="ck-title">Campak</div>
+                  <div class="ck-sub">Surveilans &amp; Pengendalian · P2</div>
+                </div>
+                <span class="ck-badge ok">data ada</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">TB</div><div class="ck-sub">P2</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">HIV/AIDS</div><div class="ck-sub">P2</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Malaria</div><div class="ck-sub">P2</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">ISPA</div><div class="ck-sub">P2</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Diabetes</div><div class="ck-sub">PTM</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Hipertensi</div><div class="ck-sub">PTM</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Surveilans &amp; Imunisasi</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Penyehatan Lingkungan</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+            </div>
+
+            <!-- KESMAS -->
+            <div class="cetak-bidang-header" onclick="toggleCetakBidang('kesmas')" id="cbh-kesmas">
+              <span>🌿 Kesehatan Masyarakat</span><span class="cbh-arrow" id="cba-kesmas">▸</span>
+            </div>
+            <div class="cetak-bidang-body" id="cbb-kesmas">
+              <label class="cetak-check-item available">
+                <input type="checkbox" id="ck-stunting" onchange="updateCetakPreview()">
+                <div>
+                  <div class="ck-title">Stunting</div>
+                  <div class="ck-sub">Gizi &amp; KIA</div>
+                </div>
+                <span class="ck-badge ok">data ada</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Gizi Buruk</div><div class="ck-sub">Gizi &amp; KIA</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">KIA</div><div class="ck-sub">Gizi &amp; KIA</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Promkes &amp; Takelkesmas</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Keswapol</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+            </div>
+
+            <!-- YANKES -->
+            <div class="cetak-bidang-header" onclick="toggleCetakBidang('yankes')" id="cbh-yankes">
+              <span>🏥 Pelayanan Kesehatan</span><span class="cbh-arrow" id="cba-yankes">▸</span>
+            </div>
+            <div class="cetak-bidang-body" id="cbb-yankes">
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Kes. Primer &amp; Rujukan</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Kes. Khusus &amp; Penjaminan</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Reglimupel</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+            </div>
+
+            <!-- SDK -->
+            <div class="cetak-bidang-header" onclick="toggleCetakBidang('sdk')" id="cbh-sdk">
+              <span>📦 Sumber Daya Kesehatan</span><span class="cbh-arrow" id="cba-sdk">▸</span>
+            </div>
+            <div class="cetak-bidang-body" id="cbb-sdk">
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">PSDK</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Sarpraskes</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+              <label class="cetak-check-item disabled">
+                <input type="checkbox" disabled>
+                <div><div class="ck-title">Farmakmin</div><div class="ck-sub">Subbidang</div></div>
+                <span class="ck-badge no">—</span>
+              </label>
+            </div>
+
+            <!-- Info -->
+            <div style="padding:10px 14px;font-size:0.7rem;color:#94a3b8;border-top:1px solid #f1f5f9;line-height:1.5">
+              ✅ = data tersedia &nbsp;·&nbsp; — = belum ada data
+            </div>
+          </div>
+
+          <!-- KANAN: Preview area cetak -->
+          <div id="area-cetak">
+
+            <!-- Placeholder saat belum ada yang dipilih -->
+            <div id="cetak-placeholder" style="background:white;border:1.5px dashed #e2e8f0;border-radius:10px;padding:48px;text-align:center;color:#94a3b8">
+              <div style="font-size:2rem;margin-bottom:12px">📋</div>
+              <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">Belum ada laporan dipilih</div>
+              <div style="font-size:0.78rem">Pilih bidang di kiri, lalu centang sub-bidang yang ingin dicetak</div>
+            </div>
+
+            <!-- HEADER LAPORAN (muncul kalau ada yang dicentang) -->
+            <div id="cetak-header" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:22px;margin-bottom:14px;border-top:4px solid #1e3a5f">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+                <div style="background:#1e3a5f;color:white;font-weight:700;font-size:0.95rem;padding:7px 13px;border-radius:7px">SAKTI</div>
+                <div>
+                  <div style="font-size:0.95rem;font-weight:700;color:#1e293b">Laporan Kesehatan Kabupaten Sleman</div>
+                  <div style="font-size:0.75rem;color:#64748b">Dinas Kesehatan Kabupaten Sleman · Data 2023–2025</div>
+                </div>
+                <div style="margin-left:auto;text-align:right;font-size:0.72rem;color:#64748b">
+                  Dicetak: <span id="tgl-cetak"></span><br>SAKTI v1.0
+                </div>
+              </div>
+              <div style="background:#f8fafc;border-radius:7px;padding:10px 14px;font-size:0.78rem;color:#475569;line-height:1.7">
+                Laporan rekapitulasi data kesehatan masyarakat Kabupaten Sleman bersumber dari sistem informasi
+                Dinas Kesehatan Kabupaten Sleman, mencakup periode 2023–2025 di 25 puskesmas.
+              </div>
+            </div>
+
+            <!-- RINGKASAN EKSEKUTIF -->
+            <div id="cetak-ringkasan" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:14px">
+              <div style="font-size:0.88rem;font-weight:700;color:#1e293b;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid #f1f5f9">📊 Ringkasan Eksekutif</div>
+              <div id="cetak-kpi-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+            </div>
+
+            <!-- SEKSI DBD -->
+            <div id="seksi-dbd" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #fee2e2">
+                <div style="width:9px;height:9px;background:#ef4444;border-radius:50%"></div>
+                <div style="font-size:0.9rem;font-weight:700;color:#1e293b">P2PL — Demam Berdarah Dengue (DBD)</div>
+              </div>
+              <div id="cetak-dbd-kpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+              <div style="font-size:0.8rem;font-weight:600;color:#475569;margin-bottom:8px">Rekapitulasi Kasus per Puskesmas</div>
+              <div class="tbl-wrap"><table>
+                <thead><tr><th>#</th><th>Puskesmas</th><th>2023</th><th>2024</th><th>2025</th><th>Status</th></tr></thead>
+                <tbody id="cetak-dbd-tbody"></tbody>
+              </table></div>
+            </div>
+
+            <!-- SEKSI CAMPAK -->
+            <div id="seksi-campak" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #fef3c7">
+                <div style="width:9px;height:9px;background:#f59e0b;border-radius:50%"></div>
+                <div style="font-size:0.9rem;font-weight:700;color:#1e293b">P2PL — Campak (Suspek &amp; Positif Konfirmasi)</div>
+              </div>
+              <div id="cetak-campak-kpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+              <div style="font-size:0.8rem;font-weight:600;color:#475569;margin-bottom:8px">Rekapitulasi per Puskesmas</div>
+              <div class="tbl-wrap"><table>
+                <thead><tr><th>#</th><th>Puskesmas</th><th>Suspek '23</th><th>Pos '23</th><th>Rate '23</th><th>Suspek '24</th><th>Pos '24</th><th>Rate '24</th><th>Suspek '25</th><th>Pos '25</th><th>Rate '25</th></tr></thead>
+                <tbody id="cetak-campak-tbody"></tbody>
+              </table></div>
+            </div>
+
+            <!-- SEKSI STUNTING -->
+            <div id="seksi-stunting" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #dcfce7">
+                <div style="width:9px;height:9px;background:#22c55e;border-radius:50%"></div>
+                <div style="font-size:0.9rem;font-weight:700;color:#1e293b">Kes. Masyarakat — Status Gizi Balita (Stunting)</div>
+              </div>
+              <div id="cetak-stunting-kpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+              <div style="font-size:0.8rem;font-weight:600;color:#475569;margin-bottom:8px">Prevalensi Stunting per Puskesmas (%)</div>
+              <div class="tbl-wrap"><table>
+                <thead><tr><th>#</th><th>Puskesmas</th><th>2023 (%)</th><th>2024 (%)</th><th>2025 (%)</th><th>Tren</th></tr></thead>
+                <tbody id="cetak-stunting-tbody"></tbody>
+              </table></div>
+            </div>
+
+            <!-- FOOTER -->
+            <div id="cetak-footer" style="display:none;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;font-size:0.72rem;color:#94a3b8;display:none;justify-content:space-between;align-items:center">
+              <span>SAKTI v1.0 · MIK A 2023 · UGM Vocational College</span>
+              <span>Dinas Kesehatan Kabupaten Sleman</span>
+            </div>
+
+          </div><!-- /area-cetak -->
+        </div><!-- /grid -->
+      </div>
+
+      <!-- PAGE: CATATAN PIMPINAN -->
+      <div class="page" id="page-catatan">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:3px">📝 Catatan Pimpinan</h1>
+            <p style="font-size:0.8rem;color:#64748b">Instruksi, arahan, dan catatan dari Kepala Dinas</p>
+          </div>
+          <button type="button" onclick="showFormCatatan()" id="btn-tambah-catatan"
+            style="display:flex;align-items:center;gap:7px;background:#1e3a5f;color:white;border:none;border-radius:8px;padding:9px 18px;font-size:0.83rem;font-weight:600;cursor:pointer;font-family:inherit">
+            + Tambah Catatan
+          </button>
+        </div>
+
+        <!-- Form tambah/edit (tersembunyi) -->
+        <div class="catatan-form" id="catatan-form" style="display:none">
+          <div style="font-size:0.85rem;font-weight:700;color:#1e293b;margin-bottom:14px" id="form-title">✏️ Catatan Baru</div>
+          <input type="hidden" id="catatan-edit-id">
+          <div style="margin-bottom:12px">
+            <label style="font-size:0.75rem;font-weight:600;color:#475569;display:block;margin-bottom:5px">Judul</label>
+            <input type="text" id="inp-judul" placeholder="Judul catatan..." style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.84rem;font-family:'Inter',sans-serif;color:#1e293b;outline:none;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:0.75rem;font-weight:600;color:#475569;display:block;margin-bottom:5px">Isi Catatan</label>
+            <textarea id="inp-isi" placeholder="Tulis instruksi atau arahan..."></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#475569;display:block;margin-bottom:5px">Prioritas</label>
+              <select id="inp-prioritas">
+                <option value="Rendah">🟢 Rendah</option>
+                <option value="Sedang" selected>🟡 Sedang</option>
+                <option value="Tinggi">🔴 Tinggi</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#475569;display:block;margin-bottom:5px">Bidang Terkait</label>
+              <select id="inp-bidang">
+                <option value="Umum">Umum</option>
+                <option value="P2PL">P2PL</option>
+                <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
+                <option value="Yankes">Yankes</option>
+                <option value="SDK">SDK</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn-simpan" onclick="simpanCatatan()">💾 Simpan</button>
+            <button type="button" class="btn-batal" onclick="tutupFormCatatan()">Batal</button>
+          </div>
+        </div>
+
+        <!-- Filter -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap" id="catatan-filter">
+          <button type="button" class="yr-btn active" onclick="filterCatatan('semua',this)">Semua</button>
+          <button type="button" class="yr-btn" onclick="filterCatatan('Tinggi',this)">🔴 Tinggi</button>
+          <button type="button" class="yr-btn" onclick="filterCatatan('Sedang',this)">🟡 Sedang</button>
+          <button type="button" class="yr-btn" onclick="filterCatatan('Rendah',this)">🟢 Rendah</button>
+        </div>
+
+        <!-- List catatan -->
+        <div id="catatan-list">
+          <div class="catatan-empty"><div style="font-size:2rem;margin-bottom:10px">📋</div>Belum ada catatan</div>
+        </div>
+      </div>
+
+      <!-- PAGE: P2PL MENU -->
+      <div class="page" id="page-p2pl">
+        <div class="page-header">
+          <h1>P2PL – Pencegahan &amp; Pengendalian Penyakit</h1>
+          <p>Pilih sub-bidang untuk melihat dashboard detail</p>
+        </div>
+        <div class="menu-grid">
+          <div class="menu-card available" onclick="showDash('dbd')">
+            <div class="menu-card-title">DBD</div>
+            <div class="menu-card-sub">Penyakit Menular</div>
+            <span class="menu-card-badge badge-available">data tersedia</span>
+          </div>
+          <div class="menu-card available" onclick="showDash('campak')">
+            <div class="menu-card-title">Campak</div>
+            <div class="menu-card-sub">Surveilans &amp; Pengendalian</div>
+            <span class="menu-card-badge badge-available">data tersedia</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">TB</div>
+            <div class="menu-card-sub">Penyakit Menular</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">HIV/AIDS</div>
+            <div class="menu-card-sub">Penyakit Menular</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Malaria</div>
+            <div class="menu-card-sub">Penyakit Menular</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">ISPA</div>
+            <div class="menu-card-sub">Penyakit Menular</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Diabetes</div>
+            <div class="menu-card-sub">PTM</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Hipertensi</div>
+            <div class="menu-card-sub">PTM</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: KES. MASYARAKAT MENU -->
+      <div class="page" id="page-kesmas">
+        <div class="page-header">
+          <h1>Kesehatan Masyarakat</h1>
+          <p>Pilih sub-bidang untuk melihat dashboard detail</p>
+        </div>
+        <div class="menu-grid">
+          <div class="menu-card available" onclick="showDash('stunting')">
+            <div class="menu-card-title">Stunting</div>
+            <div class="menu-card-sub">Gizi Masyarakat</div>
+            <span class="menu-card-badge badge-available">data tersedia</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Gizi Buruk</div>
+            <div class="menu-card-sub">Gizi Masyarakat</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">KIA</div>
+            <div class="menu-card-sub">Kesehatan Ibu &amp; Anak</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Posyandu</div>
+            <div class="menu-card-sub">Gizi Masyarakat</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: YANKES MENU -->
+      <div class="page" id="page-yankes">
+        <div class="page-header">
+          <h1>Pelayanan Kesehatan (Yankes)</h1>
+          <p>Pilih sub-bidang untuk melihat dashboard detail</p>
+        </div>
+        <div class="menu-grid">
+          <div class="menu-card">
+            <div class="menu-card-title">Kesehatan Primer & Rujukan</div>
+            <div class="menu-card-sub">Pelayanan Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Kesehatan Khusus & Penjaminan</div>
+            <div class="menu-card-sub">Pelayanan Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Reglimupel</div>
+            <div class="menu-card-sub">Pelayanan Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: SDK MENU -->
+      <div class="page" id="page-sdk">
+        <div class="page-header">
+          <h1>Sumber Daya Kesehatan (SDK)</h1>
+          <p>Pilih sub-bidang untuk melihat dashboard detail</p>
+        </div>
+        <div class="menu-grid">
+          <div class="menu-card">
+            <div class="menu-card-title">PSDK</div>
+            <div class="menu-card-sub">Sumber Daya Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Sarpraskes</div>
+            <div class="menu-card-sub">Sumber Daya Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+          <div class="menu-card">
+            <div class="menu-card-title">Farmakmin</div>
+            <div class="menu-card-sub">Sumber Daya Kesehatan</div>
+            <span class="menu-card-badge badge-empty">belum ada data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: DBD DASHBOARD -->
+      <div class="page" id="page-dbd">
+        <div class="dash-header">
+          <div>
+            <div class="dash-title">Dashboard DBD — Kabupaten Sleman</div>
+            <div class="dash-sub">Demam Berdarah Dengue · Data Dinas Kesehatan 2023–2025</div>
+          </div>
+          <div class="year-tabs">
+            <button class="yr-btn active" onclick="filterDbd('all',this)">Semua</button>
+            <button class="yr-btn" onclick="filterDbd('2023',this)">2023</button>
+            <button class="yr-btn" onclick="filterDbd('2024',this)">2024</button>
+            <button class="yr-btn" onclick="filterDbd('2025',this)">2025</button>
+          </div>
+        </div>
+        <div class="kpi-row" id="dbd-kpi"><div class="loading-overlay"><div class="spinner"></div>Memuat data…</div></div>
+        <div class="chart-row two">
+          <div class="chart-card">
+            <div class="chart-card-title">Tren Kasus DBD per Tahun</div>
+            <div class="chart-card-sub">Top 10 puskesmas dengan kasus tertinggi</div>
+            <div class="chart-wrap h240"><canvas id="dbd-bar"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Distribusi Kelompok Umur</div>
+            <div class="chart-card-sub">Total kasus DBD kabupaten per kelompok umur</div>
+            <div class="chart-wrap h200"><canvas id="dbd-age"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-card" style="margin-bottom:16px">
+          <div class="chart-card-title">Seluruh Puskesmas — Kasus DBD</div>
+          <div class="chart-card-sub">25 puskesmas Kabupaten Sleman</div>
+          <div class="chart-wrap h280"><canvas id="dbd-all"></canvas></div>
+        </div>
+
+        <!-- DBD: Gender -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Distribusi Gender — DBD</div>
+            <div class="chart-card-sub">Jumlah kasus per jenis kelamin per tahun</div>
+            <div class="chart-wrap h240"><canvas id="dbd-gender-bar"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Proporsi Gender DBD (%)</div>
+            <div class="chart-card-sub">Perbandingan Laki-laki vs Perempuan per tahun</div>
+            <div class="chart-wrap h240"><canvas id="dbd-gender-pie"></canvas></div>
+          </div>
+        </div>
+
+        <!-- DBD: Kapanewon + Kelompok Umur per tahun -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Kasus per Kapanewon</div>
+            <div class="chart-card-sub">Agregasi per kecamatan</div>
+            <div class="chart-wrap h240"><canvas id="dbd-kap"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Kelompok Umur per Tahun</div>
+            <div class="chart-card-sub">Distribusi usia penderita DBD</div>
+            <div class="chart-wrap h280"><canvas id="dbd-age-line"></canvas></div>
+          </div>
+        </div>
+
+        <!-- DBD: Peta -->
+        <div class="map-card">
+          <div class="chart-card-title">🗺️ Peta Sebaran DBD per Puskesmas</div>
+          <div class="chart-card-sub">Ukuran & warna marker = jumlah kasus · klik untuk detail</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="map-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Tinggi (&gt;30)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Sedang (15–30)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Rendah (&lt;15)</div>
+            </div>
+            <div class="map-yr-sel">
+              <button class="yr-btn active" onclick="switchDbdMap('2023',this)">2023</button>
+              <button class="yr-btn" onclick="switchDbdMap('2024',this)">2024</button>
+              <button class="yr-btn" onclick="switchDbdMap('2025',this)">2025</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="dbd-map"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Tabel Rekapitulasi DBD</div>
+          <div class="chart-card-sub">Data lengkap per puskesmas 2023–2025</div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>#</th><th>Puskesmas</th><th>2023</th><th>2024</th><th>2025</th><th>Status</th></tr></thead>
+            <tbody id="dbd-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- PAGE: STUNTING DASHBOARD -->
+      <div class="page" id="page-stunting">
+        <div class="dash-header">
+          <div>
+            <div class="dash-title">Dashboard Stunting — Kabupaten Sleman</div>
+            <div class="dash-sub">Status Gizi Balita (PSG) · TB/U &lt; -2 SD · Data 2023–2025</div>
+          </div>
+        </div>
+        <div class="kpi-row" id="stunting-kpi"><div class="loading-overlay"><div class="spinner"></div>Memuat data…</div></div>
+        <!-- Row 1: Bar prevalensi full width -->
+        <div class="chart-row one" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Prevalensi Stunting per Puskesmas (%)</div>
+            <div class="chart-card-sub">Perbandingan 2023, 2024, 2025 — target nasional &lt;14%</div>
+            <div class="chart-wrap h320"><canvas id="stunting-bar"></canvas></div>
+          </div>
+        </div>
+        <!-- Row 2: Tren | Top 5 Puskesmas Tertinggi -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Tren Rata-rata Stunting Kabupaten</div>
+            <div class="chart-card-sub">Pergerakan prevalensi 2023 → 2025</div>
+            <div class="chart-wrap h240"><canvas id="stunting-trend"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Top 5 Puskesmas — Stunting Tertinggi 2025</div>
+            <div class="chart-card-sub">Persentase stunting tertinggi tahun terakhir</div>
+            <div class="chart-wrap h240"><canvas id="stunting-top5"></canvas></div>
+          </div>
+        </div>
+        <!-- Row 3: Donut | SP vs P stacked -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Distribusi Status Gizi Kabupaten (%)</div>
+            <div class="chart-card-sub">Sangat Pendek · Pendek · Normal · Tinggi</div>
+            <div class="chart-wrap h240"><canvas id="stunting-donut"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Sangat Pendek vs Pendek per Puskesmas</div>
+            <div class="chart-card-sub">Jumlah balita (n) per kategori TB/U</div>
+            <div class="chart-wrap h240"><canvas id="stunting-spp"></canvas></div>
+          </div>
+        </div>
+        <!-- Row 4: Cakupan full width -->
+        <div class="chart-row one" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Cakupan Pemantauan per Puskesmas (%)</div>
+            <div class="chart-card-sub">Persentase balita terpantau dari sasaran &nbsp;·&nbsp; <span style="color:#22c55e;font-weight:600">&#9632; &ge;90%</span> &nbsp;<span style="color:#f59e0b;font-weight:600">&#9632; 75&ndash;89%</span> &nbsp;<span style="color:#ef4444;font-weight:600">&#9632; &lt;75%</span></div>
+            <div class="chart-wrap h280"><canvas id="stunting-cakupan"></canvas></div>
+          </div>
+        </div>
+        <!-- Row 5: Delta 23→25 | Stunted vs Stunting -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Perubahan Stunting 2023 → 2025 per Puskesmas</div>
+            <div class="chart-card-sub">Selisih prevalensi · merah=naik · hijau=turun</div>
+            <div class="chart-wrap h280"><canvas id="stunting-delta"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Stunted vs Stunting per Puskesmas 2025 (%)</div>
+            <div class="chart-card-sub">Perbandingan stunted (semua pendek) dan stunting</div>
+            <div class="chart-wrap h280"><canvas id="stunting-sasaran"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Stunting: Peta -->
+        <div class="map-card">
+          <div class="chart-card-title">🗺️ Peta Sebaran Stunting per Puskesmas</div>
+          <div class="chart-card-sub">Ukuran & warna marker = prevalensi stunting (%) · klik untuk detail</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="map-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Tinggi (&gt;10%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Sedang (5–10%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Rendah (&lt;5%)</div>
+            </div>
+            <div class="map-yr-sel">
+              <button class="yr-btn active" onclick="switchStuntingMap('2023',this)">2023</button>
+              <button class="yr-btn" onclick="switchStuntingMap('2024',this)">2024</button>
+              <button class="yr-btn" onclick="switchStuntingMap('2025',this)">2025</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="stunting-map"></div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom:14px">
+          <div class="chart-card-title">Tabel Rekapitulasi Stunting</div>
+          <div class="chart-card-sub">Persentase stunting per puskesmas</div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>#</th><th>Puskesmas</th><th>Stunting 2023 (%)</th><th>Stunting 2024 (%)</th><th>Stunting 2025 (%)</th><th>Tren</th></tr></thead>
+            <tbody id="stunting-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- PAGE: CAMPAK DASHBOARD -->
+      <div class="page" id="page-campak">
+        <div class="dash-header">
+          <div>
+            <div class="dash-title">Dashboard Campak — Kabupaten Sleman</div>
+            <div class="dash-sub">Kasus Suspek &amp; Positif Konfirmasi Lab · 2023–2025</div>
+          </div>
+          <div class="year-tabs">
+            <button class="yr-btn active" onclick="switchCampakRate('2023',this)">2023</button>
+            <button class="yr-btn" onclick="switchCampakRate('2024',this)">2024</button>
+            <button class="yr-btn" onclick="switchCampakRate('2025',this)">2025</button>
+          </div>
+        </div>
+        <div class="kpi-row" id="campak-kpi"><div class="loading-overlay"><div class="spinner"></div>Memuat data…</div></div>
+        <div class="chart-row two">
+          <div class="chart-card">
+            <div class="chart-card-title">Suspek vs Positif per Tahun</div>
+            <div class="chart-card-sub">Total kabupaten 2023–2025</div>
+            <div class="chart-wrap h240"><canvas id="campak-overview"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Positivity Rate per Puskesmas (%)</div>
+            <div class="chart-card-sub">Tingkat konfirmasi dari suspek</div>
+            <div class="chart-wrap h240"><canvas id="campak-rate"></canvas></div>
+          </div>
+        </div>
+        <!-- Campak: Kelompok umur + Kapanewon + Peta -->
+        <div class="chart-row two" style="margin-bottom:14px">
+          <div class="chart-card">
+            <div class="chart-card-title">Kelompok Umur Suspek & Positif</div>
+            <div class="chart-card-sub">Distribusi usia kasus campak kabupaten</div>
+            <div class="chart-wrap h240"><canvas id="campak-age"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Suspek per Kapanewon</div>
+            <div class="chart-card-sub">Agregasi kasus per kecamatan</div>
+            <div class="chart-wrap h240"><canvas id="campak-kap"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Campak: Peta -->
+        <div class="map-card">
+          <div class="chart-card-title">🗺️ Peta Sebaran Campak per Puskesmas</div>
+          <div class="chart-card-sub">Ukuran marker = suspek · warna = positivity rate · klik untuk detail</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="map-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Rate Tinggi (&gt;15%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Rate Sedang (5–15%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Rate Rendah (&lt;5%)</div>
+            </div>
+            <div class="map-yr-sel">
+              <button class="yr-btn active" onclick="switchCampakMap('2023',this)">2023</button>
+              <button class="yr-btn" onclick="switchCampakMap('2024',this)">2024</button>
+              <button class="yr-btn" onclick="switchCampakMap('2025',this)">2025</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="campak-map"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">Tabel Rekapitulasi Campak</div>
+          <div class="chart-card-sub">Data lengkap per puskesmas</div>
+          <div class="tbl-wrap"><table>
+            <thead><tr>
+              <th>#</th><th>Puskesmas</th>
+              <th>Suspek '23</th><th>Positif '23</th><th>Rate '23</th>
+              <th>Suspek '24</th><th>Positif '24</th><th>Rate '24</th>
+              <th>Suspek '25</th><th>Positif '25</th><th>Rate '25</th>
+            </tr></thead>
+            <tbody id="campak-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-body -->
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let currentBidang = 'p2pl';
+let loaded = { dbd: false, stunting: false, campak: false, ringkasan: false };
+let cache = {};
+let dbdAgeChart = null, campakRateChart = null;
+// Global year state (used when yr-tabs-sm removed from individual charts)
+let gYrDbdAge = '2023', gYrCakupan = '2023', gYrSpP = '2023', gYrSasaran = '2023';
+let gYrDonut = '2023', gYrCampakAge = '2023', gYrCampakKap = '2023';
+let gYrDbdKap = '2023';
+
+// ── NAV ────────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+}
+
+function setBreadcrumb(parts) {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '<span onclick="goHome()">Beranda</span>';
+  parts.forEach((p, i) => {
+    bc.innerHTML += ' <span style="color:#94a3b8">›</span> ';
+    if (i < parts.length - 1) {
+      bc.innerHTML += `<span onclick="${p.onclick}">${p.label}</span>`;
+    } else {
+      bc.innerHTML += `<span style="color:#1e293b;font-weight:500">${p.label}</span>`;
+    }
+  });
+}
+
+function setNavActive(id) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+function goHome() {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-ringkasan')?.classList.add('active');
+  showPage('ringkasan');
+  document.getElementById('breadcrumb').innerHTML = '<span style="color:#1e293b;font-weight:500">Ringkasan</span>';
+  if (!loaded.ringkasan) { loaded.ringkasan = true; initRingkasan(); }
+}
+
+function showBidang(name) {
+  currentBidang = name;
+  setNavActive('nav-' + name);
+  showPage(name);
+  const labels = { p2pl: 'P2PL', kesmas: 'Kes. Masyarakat', yankes: 'Yankes', sdk: 'SDK' };
+  setBreadcrumb([{ label: labels[name] }]);
+}
+
+function showDash(name) {
+  showPage(name);
+  const bidangLabel = { dbd: 'P2PL', campak: 'P2PL', stunting: 'Kes. Masyarakat' };
+  const bidangNav = { dbd: 'p2pl', campak: 'p2pl', stunting: 'kesmas' };
+  const dashLabel = { dbd: 'DBD', campak: 'Campak', stunting: 'Stunting' };
+  const bidangKey = bidangNav[name];
+  setBreadcrumb([
+    { label: bidangLabel[name], onclick: `showBidang('${bidangKey}')` },
+    { label: dashLabel[name] }
+  ]);
+  if (!loaded[name]) { loaded[name] = true; fetchAndRender(name); }
+}
+
+function comingSoon() { alert('Fitur ini belum tersedia.'); }
+
+// ── FETCH ─────────────────────────────────────────────────────────────────
+async function fetchJSON(url) {
+  if (cache[url]) return cache[url];
+  const r = await fetch(url);
+  const d = await r.json();
+  cache[url] = d;
+  return d;
+}
+
+async function fetchAndRender(name) {
+  if (name === 'dbd') await renderDbd();
+  if (name === 'stunting') await renderStunting();
+  if (name === 'campak') await renderCampak();
+}
+
+// ── CHART DEFAULTS ─────────────────────────────────────────────────────────
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#f1f5f9';
+
+function baseOpts(extra = {}) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+      tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#94a3b8', borderColor: '#334155', borderWidth: 1 }
+    },
+    scales: {
+      x: { ticks: { font: { size: 10 }, maxRotation: 40 }, grid: { color: '#f1f5f9' } },
+      y: { grid: { color: '#f1f5f9' } }
+    },
+    ...extra
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DBD
+// ════════════════════════════════════════════════════════════════════════════
+let dbdRekap = null;
+
+async function renderDbd() {
+  const [rekap, age, gender] = await Promise.all([
+    fetchJSON('/api/dbd/rekapitulasi'),
+    fetchJSON('/api/dbd/kelompok_umur'),
+    fetchJSON('/api/dbd/gender').catch(() => null)
+  ]);
+  dbdRekap = rekap;
+
+  document.getElementById('dbd-kpi').innerHTML = `
+    <div class="kpi-card red">
+      <div class="kpi-label">Total Kasus 2023</div>
+      <div class="kpi-val">${rekap.total_2023}</div>
+      <div class="kpi-desc">kasus DBD</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Total Kasus 2024</div>
+      <div class="kpi-val">${rekap.total_2024}</div>
+      <div class="kpi-desc">kasus DBD</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Total Kasus 2025</div>
+      <div class="kpi-val">${rekap.total_2025}</div>
+      <div class="kpi-desc">kasus DBD</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Puskesmas Tertinggi '25</div>
+      <div class="kpi-val" style="font-size:1.1rem">${topPusk(rekap,'2025')}</div>
+      <div class="kpi-desc">${Math.max(...rekap.tahun_2025)} kasus</div>
+    </div>`;
+
+  // Top10 bar
+  const top10 = getTop10(rekap);
+  new Chart(document.getElementById('dbd-bar'), {
+    type: 'bar',
+    data: {
+      labels: top10.labels,
+      datasets: [
+        { label: '2023', data: top10.d23, backgroundColor: 'rgba(239,68,68,0.3)', borderColor: '#ef4444', borderWidth: 1.5 },
+        { label: '2024', data: top10.d24, backgroundColor: 'rgba(239,68,68,0.55)', borderColor: '#ef4444', borderWidth: 1.5 },
+        { label: '2025', data: top10.d25, backgroundColor: '#ef4444', borderRadius: 2 },
+      ]
+    }, options: baseOpts()
+  });
+
+  // Age chart init
+  renderDbdAgeChart(age, '2023');
+  window._dbdAge = age;
+
+  // All puskesmas
+  new Chart(document.getElementById('dbd-all'), {
+    type: 'bar',
+    data: {
+      labels: rekap.puskesmas,
+      datasets: [
+        { label: '2023', data: rekap.tahun_2023, backgroundColor: 'rgba(239,68,68,0.25)' },
+        { label: '2024', data: rekap.tahun_2024, backgroundColor: 'rgba(239,68,68,0.55)' },
+        { label: '2025', data: rekap.tahun_2025, backgroundColor: '#ef4444' },
+      ]
+    }, options: baseOpts()
+  });
+
+  // Table
+  document.getElementById('dbd-tbody').innerHTML = rekap.puskesmas.map((p, i) => {
+    const mx = Math.max(rekap.tahun_2023[i], rekap.tahun_2024[i], rekap.tahun_2025[i]);
+    const b = mx > 30 ? 'hi' : mx > 15 ? 'md' : 'lo';
+    const bl = mx > 30 ? 'Tinggi' : mx > 15 ? 'Sedang' : 'Rendah';
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td>
+      <td>${rekap.tahun_2023[i]}</td><td>${rekap.tahun_2024[i]}</td><td>${rekap.tahun_2025[i]}</td>
+      <td><span class="tbl-badge ${b}">${bl}</span></td></tr>`;
+  }).join('');
+
+  // ── GENDER CHART ──
+  // Gunakan data dari API /api/dbd/gender jika tersedia, fallback ke data dari rekap laki/perempuan
+  const genderData = gender || {
+    laki_2023: rekap.laki_2023 || Math.round(rekap.total_2023*0.55),
+    perempuan_2023: rekap.perempuan_2023 || (rekap.total_2023 - Math.round(rekap.total_2023*0.55)),
+    laki_2024: rekap.laki_2024 || Math.round(rekap.total_2024*0.53),
+    perempuan_2024: rekap.perempuan_2024 || (rekap.total_2024 - Math.round(rekap.total_2024*0.53)),
+    laki_2025: rekap.laki_2025 || Math.round(rekap.total_2025*0.52),
+    perempuan_2025: rekap.perempuan_2025 || (rekap.total_2025 - Math.round(rekap.total_2025*0.52)),
+  };
+  new Chart(document.getElementById('dbd-gender-bar'), {
+    type: 'bar',
+    data: {
+      labels: ['2023', '2024', '2025'],
+      datasets: [
+        { label: 'Laki-laki', data: [genderData.laki_2023, genderData.laki_2024, genderData.laki_2025],
+          backgroundColor: 'rgba(59,130,246,0.7)', borderColor: '#3b82f6', borderWidth: 1.5, borderRadius: 4 },
+        { label: 'Perempuan', data: [genderData.perempuan_2023, genderData.perempuan_2024, genderData.perempuan_2025],
+          backgroundColor: 'rgba(236,72,153,0.7)', borderColor: '#ec4899', borderWidth: 1.5, borderRadius: 4 },
+      ]
+    },
+    options: { ...baseOpts(),
+      scales: { ...baseOpts().scales,
+        x: { ...baseOpts().scales.x, stacked: false },
+        y: { ...baseOpts().scales.y }
+      }
+    }
+  });
+  // Proporsi pie
+  const totalL = genderData.laki_2023 + genderData.laki_2024 + genderData.laki_2025;
+  const totalP = genderData.perempuan_2023 + genderData.perempuan_2024 + genderData.perempuan_2025;
+  new Chart(document.getElementById('dbd-gender-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Laki-laki', 'Perempuan'],
+      datasets: [{
+        data: [totalL, totalP],
+        backgroundColor: ['rgba(59,130,246,0.75)', 'rgba(236,72,153,0.75)'],
+        borderColor: ['#3b82f6', '#ec4899'], borderWidth: 2
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 14 } },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = ((ctx.parsed/total)*100).toFixed(1);
+            return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+          }
+        }, backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#94a3b8' } } }
+  });
+}
+
+function renderDbdAgeChart(age, year) {
+  if (dbdAgeChart) dbdAgeChart.destroy();
+  const data = year === '2023' ? age.data_2023 : year === '2024' ? age.data_2024 : age.data_2025;
+  dbdAgeChart = new Chart(document.getElementById('dbd-age'), {
+    type: 'bar',
+    data: {
+      labels: age.age_groups,
+      datasets: [{ label: `Kasus ${year}`, data, backgroundColor: '#ef4444', borderRadius: 3 }]
+    },
+    options: { ...baseOpts(), plugins: { legend: { display: false } } }
+  });
+}
+
+function switchDbdAge(year, btn) {
+  btn.closest('.year-tabs').querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDbdAgeChart(window._dbdAge, year);
+}
+
+function filterDbd(year, btn) {
+  btn.closest('.year-tabs').querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!dbdRekap) return;
+
+  // ── Update KPI cards ──
+  const r = dbdRekap;
+  const isAll = year === 'all';
+  const yr = isAll ? null : parseInt(year);
+  const total = isAll ? `${r.total_2023} / ${r.total_2024} / ${r.total_2025}` : r[`total_${year}`];
+  const topIdx = isAll
+    ? r.tahun_2025.indexOf(Math.max(...r.tahun_2025))
+    : r[`tahun_${year}`].indexOf(Math.max(...r[`tahun_${year}`]));
+  const topName = r.puskesmas[topIdx];
+  const topVal  = isAll ? r.tahun_2025[topIdx] : r[`tahun_${year}`][topIdx];
+
+  if (isAll) {
+    document.getElementById('dbd-kpi').innerHTML = `
+      <div class="kpi-card red"><div class="kpi-label">Total Kasus 2023</div><div class="kpi-val">${r.total_2023}</div><div class="kpi-desc">kasus DBD</div></div>
+      <div class="kpi-card red"><div class="kpi-label">Total Kasus 2024</div><div class="kpi-val">${r.total_2024}</div><div class="kpi-desc">kasus DBD</div></div>
+      <div class="kpi-card red"><div class="kpi-label">Total Kasus 2025</div><div class="kpi-val">${r.total_2025}</div><div class="kpi-desc">kasus DBD</div></div>
+      <div class="kpi-card blue"><div class="kpi-label">Puskesmas Tertinggi '25</div><div class="kpi-val" style="font-size:1.1rem">${topPusk(r,'2025')}</div><div class="kpi-desc">${Math.max(...r.tahun_2025)} kasus</div></div>`;
+  } else {
+    const prev = year === '2023' ? null : year === '2024' ? '2023' : '2024';
+    const prevTotal = prev ? r[`total_${prev}`] : null;
+    const tren = prevTotal ? (r[`total_${year}`] > prevTotal ? `↑ naik dari ${prevTotal}` : `↓ turun dari ${prevTotal}`) : 'data awal';
+    const L = r[`laki_${year}`] || '—';
+    const P = r[`perempuan_${year}`] || '—';
+    const lPct = (L !== '—' && P !== '—' && (L+P) > 0) ? ((L/(L+P))*100).toFixed(0) : '—';
+    document.getElementById('dbd-kpi').innerHTML = `
+      <div class="kpi-card red"><div class="kpi-label">Total Kasus ${year}</div><div class="kpi-val">${r['total_'+year]}</div><div class="kpi-desc">${tren}</div></div>
+      <div class="kpi-card blue"><div class="kpi-label">Puskesmas Tertinggi</div><div class="kpi-val" style="font-size:1.1rem">${topName}</div><div class="kpi-desc">${topVal} kasus ${year}</div></div>
+      <div class="kpi-card red"><div class="kpi-label">Laki-laki ${year}</div><div class="kpi-val">${L}</div><div class="kpi-desc">${lPct !== '—' ? lPct+'% dari total' : 'kasus'}</div></div>
+      <div class="kpi-card red"><div class="kpi-label">Perempuan ${year}</div><div class="kpi-val">${P}</div><div class="kpi-desc">${lPct !== '—' ? (100-parseInt(lPct))+'% dari total' : 'kasus'}</div></div>`;
+  }
+
+  // ── Filter tabel ──
+  const tbody = document.getElementById('dbd-tbody');
+  tbody.innerHTML = r.puskesmas.map((p, i) => {
+    const v23 = r.tahun_2023[i], v24 = r.tahun_2024[i], v25 = r.tahun_2025[i];
+    if (year === '2023' && v23 === 0) return '';
+    if (year === '2024' && v24 === 0) return '';
+    if (year === '2025' && v25 === 0) return '';
+    const ref = isAll ? Math.max(v23,v24,v25) : r[`tahun_${year}`][i];
+    const b = ref > 30 ? 'hi' : ref > 15 ? 'md' : 'lo';
+    const bl = ref > 30 ? 'Tinggi' : ref > 15 ? 'Sedang' : 'Rendah';
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td>
+      <td>${v23}</td><td>${v24}</td><td>${v25}</td>
+      <td><span class="tbl-badge ${b}">${bl}</span></td></tr>`;
+  }).join('');
+}
+
+function topPusk(rekap, year) {
+  const arr = year === '2025' ? rekap.tahun_2025 : rekap.tahun_2024;
+  return rekap.puskesmas[arr.indexOf(Math.max(...arr))];
+}
+
+function getTop10(rekap) {
+  const sorted = rekap.puskesmas
+    .map((p, i) => ({ p, v: rekap.tahun_2024[i] + rekap.tahun_2025[i], i }))
+    .sort((a,b) => b.v - a.v).slice(0, 10);
+  return {
+    labels: sorted.map(t => t.p),
+    d23: sorted.map(t => rekap.tahun_2023[t.i]),
+    d24: sorted.map(t => rekap.tahun_2024[t.i]),
+    d25: sorted.map(t => rekap.tahun_2025[t.i]),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STUNTING
+// ════════════════════════════════════════════════════════════════════════════
+async function renderStunting() {
+  const d = await fetchJSON('/api/stunting/rekapitulasi');
+
+  document.getElementById('stunting-kpi').innerHTML = `
+    <div class="kpi-card green">
+      <div class="kpi-label">Rata-rata 2023</div>
+      <div class="kpi-val">${d.avg_2023}%</div>
+      <div class="kpi-desc">prevalensi stunting</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Rata-rata 2024</div>
+      <div class="kpi-val">${d.avg_2024}%</div>
+      <div class="kpi-desc">prevalensi stunting</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Rata-rata 2025</div>
+      <div class="kpi-val">${d.avg_2025}%</div>
+      <div class="kpi-desc">prevalensi stunting</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Target Nasional</div>
+      <div class="kpi-val">&lt; 14%</div>
+      <div class="kpi-desc">RPJMN 2020–2024</div>
+    </div>`;
+
+  new Chart(document.getElementById('stunting-bar'), {
+    type: 'bar',
+    data: {
+      labels: d.puskesmas,
+      datasets: [
+        { label: '2023 (%)', data: d.stunting_2023, backgroundColor: 'rgba(34,197,94,0.3)', borderColor: '#22c55e', borderWidth: 1.5 },
+        { label: '2024 (%)', data: d.stunting_2024, backgroundColor: 'rgba(34,197,94,0.55)' },
+        { label: '2025 (%)', data: d.stunting_2025, backgroundColor: '#22c55e', borderRadius: 2 },
+      ]
+    }, options: baseOpts()
+  });
+
+  new Chart(document.getElementById('stunting-trend'), {
+    type: 'line',
+    data: {
+      labels: ['2023', '2024', '2025'],
+      datasets: [{
+        label: 'Rata-rata Stunting (%)',
+        data: [d.avg_2023, d.avg_2024, d.avg_2025],
+        borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)',
+        fill: true, tension: 0.4, pointBackgroundColor: '#22c55e', pointRadius: 6
+      }]
+    }, options: baseOpts()
+  });
+
+  document.getElementById('stunting-tbody').innerHTML = d.puskesmas.map((p, i) => {
+    const dn = d.stunting_2025[i] < d.stunting_2023[i];
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td>
+      <td>${d.stunting_2023[i]}%</td><td>${d.stunting_2024[i]}%</td><td>${d.stunting_2025[i]}%</td>
+      <td class="${dn ? 'trend-dn' : 'trend-up'}">${dn ? '↓ Turun' : '↑ Naik'}</td></tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CAMPAK
+// ════════════════════════════════════════════════════════════════════════════
+let campakData = null;
+
+async function renderCampak() {
+  const d = await fetchJSON('/api/campak/rekapitulasi');
+  campakData = d;
+
+  document.getElementById('campak-kpi').innerHTML = `
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek 2023</div>
+      <div class="kpi-val">${d.total_suspek_2023}</div>
+      <div class="kpi-desc">positif: ${d.total_positif_2023}</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek 2024</div>
+      <div class="kpi-val">${d.total_suspek_2024}</div>
+      <div class="kpi-desc">positif: ${d.total_positif_2024}</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek 2025</div>
+      <div class="kpi-val">${d.total_suspek_2025}</div>
+      <div class="kpi-desc">positif: ${d.total_positif_2025}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Positivity Rate 2023</div>
+      <div class="kpi-val">${((d.total_positif_2023/d.total_suspek_2023)*100).toFixed(1)}%</div>
+      <div class="kpi-desc">konfirmasi lab</div>
+    </div>`;
+
+  new Chart(document.getElementById('campak-overview'), {
+    type: 'bar',
+    data: {
+      labels: ['2023', '2024', '2025'],
+      datasets: [
+        { label: 'Suspek', data: [d.total_suspek_2023, d.total_suspek_2024, d.total_suspek_2025], backgroundColor: 'rgba(245,158,11,0.25)', borderColor: '#f59e0b', borderWidth: 2, borderRadius: 4 },
+        { label: 'Positif', data: [d.total_positif_2023, d.total_positif_2024, d.total_positif_2025], backgroundColor: '#f59e0b', borderRadius: 4 },
+      ]
+    }, options: baseOpts()
+  });
+
+  await renderCampakRateChart('2023');
+
+  document.getElementById('campak-tbody').innerHTML = d.puskesmas.map((p, i) => `
+    <tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td>
+      <td>${d.suspek_2023[i]}</td><td>${d.positif_2023[i]}</td><td>${d.rate_2023[i].toFixed(1)}%</td>
+      <td>${d.suspek_2024[i]}</td><td>${d.positif_2024[i]}</td><td>${d.rate_2024[i].toFixed(1)}%</td>
+      <td>${d.suspek_2025[i]}</td><td>${d.positif_2025[i]}</td><td>${d.rate_2025[i].toFixed(1)}%</td>
+    </tr>`).join('');
+}
+
+async function renderCampakRateChart(year) {
+  const d = await fetchCampakDetail(parseInt(year));
+  const rates = d.puskesmas.map((p,i) =>
+    d.total_suspek[i] > 0 ? parseFloat((d.total_positif[i]/d.total_suspek[i]*100).toFixed(1)) : 0
+  );
+  if (campakRateChart) campakRateChart.destroy();
+  campakRateChart = new Chart(document.getElementById('campak-rate'), {
+    type: 'bar',
+    data: {
+      labels: d.puskesmas,
+      datasets: [{ label: `Positivity Rate ${year} (%)`, data: rates,
+        backgroundColor: rates.map(r => r>15?'#ef4444':r>5?'#f59e0b':'#22c55e'),
+        borderRadius: 3 }]
+    },
+    options: { ...baseOpts(),
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Rate: ${ctx.parsed.y}% (${d.total_positif[ctx.dataIndex]} positif / ${d.total_suspek[ctx.dataIndex]} suspek)` }}},
+      scales: {
+        x: { ...baseOpts().scales.x, ticks: { font:{size:9}, maxRotation:45 } },
+        y: { ...baseOpts().scales.y, ticks: { callback: v => v+'%' } }
+      }
+    }
+  });
+}
+
+async function switchCampakRate(year, btn) {
+  btn.closest('.year-tabs').querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!campakData) return;
+  // Update KPI
+  const sp = campakData[`total_suspek_${year}`];
+  const po = campakData[`total_positif_${year}`];
+  const rate = sp > 0 ? ((po/sp)*100).toFixed(1) : '0.0';
+  const prev = year==='2023' ? null : year==='2024' ? '2023' : '2024';
+  const prevSp = prev ? campakData[`total_suspek_${prev}`] : null;
+  const prevPo = prev ? campakData[`total_positif_${prev}`] : null;
+  const prevRate = prev && prevSp > 0 ? ((prevPo/prevSp)*100).toFixed(1) : null;
+  document.getElementById('campak-kpi').innerHTML = `
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek ${year}</div>
+      <div class="kpi-val">${sp}</div>
+      <div class="kpi-desc">positif: ${po} kasus</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Positivity Rate ${year}</div>
+      <div class="kpi-val">${rate}%</div>
+      <div class="kpi-desc">konfirmasi lab</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek ${prev||'—'}</div>
+      <div class="kpi-val">${prevSp??'—'}</div>
+      <div class="kpi-desc">${prevPo!=null?'positif: '+prevPo:'tahun sebelumnya'}</div>
+    </div>
+    <div class="kpi-card ${prevRate&&parseFloat(rate)<=parseFloat(prevRate)?'green':'red'}">
+      <div class="kpi-label">Tren Rate vs ${prev||'—'}</div>
+      <div class="kpi-val">${prevRate?(parseFloat(rate)<=parseFloat(prevRate)?'↓ ':'↑ ')+prevRate+'%':'—'}</div>
+      <div class="kpi-desc">${prevRate?(parseFloat(rate)<=parseFloat(prevRate)?'membaik':'perlu perhatian'):'tidak ada data'}</div>
+    </div>`;
+  // Update semua chart
+  await renderCampakRateChart(year);
+  const d = await fetchCampakDetail(parseInt(year));
+  if (campakAgeChart) {
+    campakAgeChart.data.datasets[0].data=d.age_sp_total;
+    campakAgeChart.data.datasets[1].data=d.age_po_total;
+    campakAgeChart.update();
+  }
+  if (campakKapChart) {
+    campakKapChart.data.labels=d.kapanewon_labels;
+    campakKapChart.data.datasets[0].data=d.kapanewon_suspek;
+    campakKapChart.data.datasets[1].data=d.kapanewon_positif;
+    campakKapChart.update();
+  }
+  renderCampakMapMarkers(parseInt(year));
+  campakMap&&campakMap.invalidateSize();
+  document.querySelectorAll('#page-campak .map-yr-sel .yr-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.trim()===year);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+// (init dipanggil setelah semua fungsi terdefinisi, lihat bawah)
+
+// ══════════════════════════════════════════════════════════════════
+// RINGKASAN
+// ══════════════════════════════════════════════════════════════════
+async function initRingkasan() {
+  const [dbd, stunting, campak] = await Promise.all([
+    fetchJSON('/api/dbd/rekapitulasi'),
+    fetchJSON('/api/stunting/rekapitulasi'),
+    fetchJSON('/api/campak/rekapitulasi'),
+  ]);
+
+  // KPI
+  const topDbd = dbd.puskesmas[dbd.tahun_2025.indexOf(Math.max(...dbd.tahun_2025))];
+  document.getElementById('rkp-kpi').innerHTML = `
+    <div class="kpi-card red">
+      <div class="kpi-label">Total DBD 2025</div>
+      <div class="kpi-val">${dbd.total_2025}</div>
+      <div class="kpi-desc">↑ dari ${dbd.total_2024} (2024)</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Rata-rata Stunting 2025</div>
+      <div class="kpi-val">${stunting.avg_2025}%</div>
+      <div class="kpi-desc">target nasional &lt;14%</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Suspek Campak 2025</div>
+      <div class="kpi-val">${campak.total_suspek_2025}</div>
+      <div class="kpi-desc">positif: ${campak.total_positif_2025}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Puskesmas Pantau</div>
+      <div class="kpi-val">25</div>
+      <div class="kpi-desc">Kabupaten Sleman</div>
+    </div>`;
+
+  // ── Alert cards ──
+  const topDbdIdx = dbd.tahun_2025.indexOf(Math.max(...dbd.tahun_2025));
+  const topDbdNama = dbd.puskesmas[topDbdIdx];
+  const topDbdVal  = dbd.tahun_2025[topDbdIdx];
+  const highStunting = stunting.puskesmas.filter((p,i) => stunting.stunting_2025[i] > 8);
+  const campakRate = campak.total_suspek_2025 > 0
+    ? ((campak.total_positif_2025/campak.total_suspek_2025)*100).toFixed(1) : '0.0';
+
+  let alertHtml = '';
+
+  // DBD
+  if (topDbdVal > 20) {
+    alertHtml += `<div style="background:#fef2f2;border:1px solid #fecaca;border-left:4px solid #ef4444;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.82rem">
+      <span style="font-size:18px">🔴</span>
+      <div><strong>DBD Tinggi:</strong> Puskesmas <strong>${topDbdNama}</strong> mencatat ${topDbdVal} kasus DBD di 2025 — tertinggi di Kabupaten Sleman.</div>
+    </div>`;
+  }
+
+  // Stunting perlu perhatian
+  if (highStunting.length > 0) {
+    alertHtml += `<div style="background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.82rem">
+      <span style="font-size:18px">🟡</span>
+      <div><strong>Stunting Perlu Perhatian:</strong> ${highStunting.length} puskesmas masih memiliki prevalensi stunting &gt;8% di 2025: <strong>${highStunting.slice(0,3).join(', ')}${highStunting.length>3?' …':''}</strong></div>
+    </div>`;
+  }
+
+  // Campak
+  if (campak.total_positif_2025 > 0) {
+    alertHtml += `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #3b82f6;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.82rem">
+      <span style="font-size:18px">🔵</span>
+      <div><strong>Campak:</strong> Positivity rate 2025 sebesar <strong>${campakRate}%</strong> dari ${campak.total_suspek_2025} suspek — perlu pemantauan surveilans &amp; pengendalian.</div>
+    </div>`;
+  }
+
+  // Stunting tren
+  const stuntingTurun = parseFloat(stunting.avg_2025) <= parseFloat(stunting.avg_2023);
+  const stuntingDiff = Math.abs(stunting.avg_2023 - stunting.avg_2025).toFixed(2);
+  if (stuntingTurun) {
+    alertHtml += `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #22c55e;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.82rem">
+      <span style="font-size:18px">🟢</span>
+      <div><strong>Stunting — Tren Stabil/Membaik:</strong> Rata-rata stunting kabupaten turun ${stuntingDiff}% (dari ${stunting.avg_2023}% di 2023 → ${stunting.avg_2025}% di 2025). Capaian sudah di bawah target nasional &lt;14%.</div>
+    </div>`;
+  } else {
+    alertHtml += `<div style="background:#fff1f2;border:1px solid #fecaca;border-left:4px solid #f87171;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:0.82rem">
+      <span style="font-size:18px">⚠️</span>
+      <div><strong>Stunting — Tren Meningkat:</strong> Rata-rata prevalensi stunting naik dari ${stunting.avg_2023}% (2023) ke ${stunting.avg_2025}% (2025). Perlu evaluasi program intervensi.</div>
+    </div>`;
+  }
+
+  document.getElementById('rkp-alert').innerHTML = alertHtml;
+
+  // Tren DBD
+  new Chart(document.getElementById('rkp-dbd-tren'), {
+    type: 'bar',
+    data: {
+      labels: ['2023','2024','2025'],
+      datasets: [{
+        label: 'Total Kasus DBD',
+        data: [dbd.total_2023, dbd.total_2024, dbd.total_2025],
+        backgroundColor: ['rgba(239,68,68,0.4)','rgba(239,68,68,0.65)','#ef4444'],
+        borderRadius: 5
+      }]
+    },
+    options: { ...baseOpts(), plugins: { legend: { display: false } } }
+  });
+
+  // Radar 3 penyakit (nilai dinormalisasi 0–100)
+  const maxDBD = Math.max(dbd.total_2023, dbd.total_2024, dbd.total_2025);
+  const maxSP = Math.max(campak.total_suspek_2023, campak.total_suspek_2024, campak.total_suspek_2025);
+  const maxST = 20; // stunting max ~20%
+  new Chart(document.getElementById('rkp-radar'), {
+    type: 'radar',
+    data: {
+      labels: ['DBD','Stunting (%)','Campak Suspek'],
+      datasets: [
+        { label:'2023', data:[dbd.total_2023/maxDBD*100, stunting.avg_2023/maxST*100, campak.total_suspek_2023/maxSP*100],
+          borderColor:'rgba(99,102,241,0.5)', backgroundColor:'rgba(99,102,241,0.08)', pointBackgroundColor:'#6366f1' },
+        { label:'2024', data:[dbd.total_2024/maxDBD*100, stunting.avg_2024/maxST*100, campak.total_suspek_2024/maxSP*100],
+          borderColor:'rgba(239,68,68,0.5)', backgroundColor:'rgba(239,68,68,0.06)', pointBackgroundColor:'#ef4444' },
+        { label:'2025', data:[dbd.total_2025/maxDBD*100, stunting.avg_2025/maxST*100, campak.total_suspek_2025/maxSP*100],
+          borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.08)', pointBackgroundColor:'#3b82f6' },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ font:{size:11}, boxWidth:12 } },
+        tooltip:{ backgroundColor:'#1e293b', titleColor:'#f8fafc', bodyColor:'#94a3b8' } },
+      scales:{ r:{ grid:{color:'#f1f5f9'}, pointLabels:{font:{size:11}}, ticks:{display:false} } } }
+  });
+
+  // Tren stunting line
+  new Chart(document.getElementById('rkp-stunting-tren'), {
+    type: 'line',
+    data: {
+      labels: ['2023','2024','2025'],
+      datasets: [{ label:'Rata-rata Stunting (%)', data:[stunting.avg_2023, stunting.avg_2024, stunting.avg_2025],
+        borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.08)', fill:true, tension:0.4,
+        pointBackgroundColor:'#22c55e', pointRadius:6 }]
+    },
+    options: { ...baseOpts(), plugins:{ legend:{display:false} } }
+  });
+
+  // Campak bar
+  new Chart(document.getElementById('rkp-campak-bar'), {
+    type: 'bar',
+    data: {
+      labels: ['2023','2024','2025'],
+      datasets: [
+        { label:'Suspek', data:[campak.total_suspek_2023, campak.total_suspek_2024, campak.total_suspek_2025], backgroundColor:'rgba(245,158,11,0.25)', borderColor:'#f59e0b', borderWidth:2, borderRadius:4 },
+        { label:'Positif', data:[campak.total_positif_2023, campak.total_positif_2024, campak.total_positif_2025], backgroundColor:'#f59e0b', borderRadius:4 },
+      ]
+    },
+    options: baseOpts()
+  });
+
+  // Top 5 DBD 2025
+  const sorted = dbd.puskesmas
+    .map((p,i) => ({p, v25:dbd.tahun_2025[i], v24:dbd.tahun_2024[i], v23:dbd.tahun_2023[i]}))
+    .sort((a,b) => b.v25 - a.v25).slice(0,5);
+  document.getElementById('rkp-top-dbd').innerHTML = sorted.map((r,i) => {
+    const tren = r.v25 > r.v24 ? '<span style="color:#ef4444;font-weight:600">↑ Naik</span>' : '<span style="color:#16a34a;font-weight:600">↓ Turun</span>';
+    return `<tr><td><b>${i+1}</b></td><td><b>${r.p}</b></td><td style="color:#ef4444;font-weight:700">${r.v25}</td><td>${r.v24}</td><td>${r.v23}</td><td>${tren}</td></tr>`;
+  }).join('');
+
+  // Status modul
+  const moduls = [
+    {n:'DBD', ok:true, ico:'🛡'},
+    {n:'Campak', ok:true, ico:'💉'},
+    {n:'Stunting', ok:true, ico:'🌿'},
+    {n:'TB', ok:false, ico:'🫁'},
+    {n:'HIV/AIDS', ok:false, ico:'🔬'},
+    {n:'Malaria', ok:false, ico:'🦟'},
+    {n:'Diabetes', ok:false, ico:'🩺'},
+    {n:'Hipertensi', ok:false, ico:'❤️'},
+  ];
+  document.getElementById('rkp-modul').innerHTML = moduls.map(m => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid ${m.ok?'#bbf7d0':'#e2e8f0'};background:${m.ok?'#f0fdf4':'#f8fafc'}">
+      <span style="font-size:16px">${m.ico}</span>
+      <span style="font-size:0.78rem;font-weight:500;color:${m.ok?'#16a34a':'#94a3b8'}">${m.n}</span>
+      <span style="margin-left:auto;font-size:0.65rem;font-weight:600;color:${m.ok?'#16a34a':'#94a3b8'}">${m.ok?'✓ Aktif':'—'}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CETAK LAPORAN
+// ══════════════════════════════════════════════════════════════════
+async function showCetak() {
+  setNavActive('nav-cetak');
+  showPage('cetak');
+  setBreadcrumb([{label:'Cetak Laporan'}]);
+  document.getElementById('tgl-cetak').textContent = new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  await populateCetakData();
+}
+
+function toggleCetakBidang(name) {
+  const body = document.getElementById('cbb-' + name);
+  const arrow = document.getElementById('cba-' + name);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+let cetakDataLoaded = false;
+let cetakCache = {};
+
+async function populateCetakData() {
+  if (cetakDataLoaded) return;
+  const [dbd, stunting, campak] = await Promise.all([
+    fetchJSON('/api/dbd/rekapitulasi'),
+    fetchJSON('/api/stunting/rekapitulasi'),
+    fetchJSON('/api/campak/rekapitulasi'),
+  ]);
+  cetakCache = { dbd, stunting, campak };
+  cetakDataLoaded = true;
+
+  // Isi tabel DBD
+  document.getElementById('cetak-dbd-kpi').innerHTML = `
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#9f1239;font-weight:600;text-transform:uppercase;margin-bottom:3px">2023</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#ef4444">${dbd.total_2023}</div><div style="font-size:0.7rem;color:#64748b">kasus</div>
+    </div>
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#9f1239;font-weight:600;text-transform:uppercase;margin-bottom:3px">2024</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#ef4444">${dbd.total_2024}</div><div style="font-size:0.7rem;color:#64748b">kasus</div>
+    </div>
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#9f1239;font-weight:600;text-transform:uppercase;margin-bottom:3px">2025</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#ef4444">${dbd.total_2025}</div><div style="font-size:0.7rem;color:#64748b">kasus</div>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#1e40af;font-weight:600;text-transform:uppercase;margin-bottom:3px">Tertinggi '25</div>
+      <div style="font-size:0.82rem;font-weight:700;color:#3b82f6">${dbd.puskesmas[dbd.tahun_2025.indexOf(Math.max(...dbd.tahun_2025))]}</div>
+    </div>`;
+  document.getElementById('cetak-dbd-tbody').innerHTML = dbd.puskesmas.map((p,i) => {
+    const mx=Math.max(dbd.tahun_2023[i],dbd.tahun_2024[i],dbd.tahun_2025[i]);
+    const [bc,bl]=mx>30?['hi','Tinggi']:mx>15?['md','Sedang']:['lo','Rendah'];
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td><td>${dbd.tahun_2023[i]}</td><td>${dbd.tahun_2024[i]}</td><td>${dbd.tahun_2025[i]}</td><td><span class="tbl-badge ${bc}">${bl}</span></td></tr>`;
+  }).join('');
+
+  // Isi tabel Stunting
+  document.getElementById('cetak-stunting-kpi').innerHTML = `
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#14532d;font-weight:600;text-transform:uppercase;margin-bottom:3px">Rata-rata 2023</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#22c55e">${stunting.avg_2023}%</div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#14532d;font-weight:600;text-transform:uppercase;margin-bottom:3px">Rata-rata 2024</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#22c55e">${stunting.avg_2024}%</div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#14532d;font-weight:600;text-transform:uppercase;margin-bottom:3px">Rata-rata 2025</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#22c55e">${stunting.avg_2025}%</div>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#1e40af;font-weight:600;text-transform:uppercase;margin-bottom:3px">Target Nasional</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#3b82f6">&lt;14%</div>
+    </div>`;
+  document.getElementById('cetak-stunting-tbody').innerHTML = stunting.puskesmas.map((p,i) => {
+    const dn=stunting.stunting_2025[i]<stunting.stunting_2023[i];
+    return `<tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td><td>${stunting.stunting_2023[i]}%</td><td>${stunting.stunting_2024[i]}%</td><td>${stunting.stunting_2025[i]}%</td><td class="${dn?'trend-dn':'trend-up'}">${dn?'↓ Turun':'↑ Naik'}</td></tr>`;
+  }).join('');
+
+  // Isi tabel Campak
+  document.getElementById('cetak-campak-kpi').innerHTML = `
+    <div style="background:#fffbeb;border:1px solid #fed7aa;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#92400e;font-weight:600;text-transform:uppercase;margin-bottom:3px">Suspek 2023</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#f59e0b">${campak.total_suspek_2023}</div><div style="font-size:0.7rem;color:#64748b">positif: ${campak.total_positif_2023}</div>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #fed7aa;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#92400e;font-weight:600;text-transform:uppercase;margin-bottom:3px">Suspek 2024</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#f59e0b">${campak.total_suspek_2024}</div><div style="font-size:0.7rem;color:#64748b">positif: ${campak.total_positif_2024}</div>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #fed7aa;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#92400e;font-weight:600;text-transform:uppercase;margin-bottom:3px">Suspek 2025</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#f59e0b">${campak.total_suspek_2025}</div><div style="font-size:0.7rem;color:#64748b">positif: ${campak.total_positif_2025}</div>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px">
+      <div style="font-size:0.65rem;color:#1e40af;font-weight:600;text-transform:uppercase;margin-bottom:3px">Rate 2023</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#3b82f6">${((campak.total_positif_2023/campak.total_suspek_2023)*100).toFixed(1)}%</div>
+    </div>`;
+  document.getElementById('cetak-campak-tbody').innerHTML = campak.puskesmas.map((p,i) => `
+    <tr><td style="color:#94a3b8">${i+1}</td><td><b>${p}</b></td>
+    <td>${campak.suspek_2023[i]}</td><td>${campak.positif_2023[i]}</td><td>${campak.rate_2023[i].toFixed(1)}%</td>
+    <td>${campak.suspek_2024[i]}</td><td>${campak.positif_2024[i]}</td><td>${campak.rate_2024[i].toFixed(1)}%</td>
+    <td>${campak.suspek_2025[i]}</td><td>${campak.positif_2025[i]}</td><td>${campak.rate_2025[i].toFixed(1)}%</td>
+    </tr>`).join('');
+}
+
+function updateCetakPreview() {
+  const ckDbd = document.getElementById('ck-dbd').checked;
+  const ckCampak = document.getElementById('ck-campak').checked;
+  const ckStunting = document.getElementById('ck-stunting').checked;
+  const ada = ckDbd || ckCampak || ckStunting;
+
+  document.getElementById('cetak-placeholder').style.display = ada ? 'none' : '';
+  document.getElementById('cetak-header').style.display = ada ? '' : 'none';
+  document.getElementById('cetak-ringkasan').style.display = ada ? '' : 'none';
+  document.getElementById('seksi-dbd').style.display = ckDbd ? '' : 'none';
+  document.getElementById('seksi-campak').style.display = ckCampak ? '' : 'none';
+  document.getElementById('seksi-stunting').style.display = ckStunting ? '' : 'none';
+  const footer = document.getElementById('cetak-footer');
+  footer.style.display = ada ? 'flex' : 'none';
+
+  if (!ada || !cetakCache.dbd) return;
+  const { dbd, stunting, campak } = cetakCache;
+  const items = [];
+  if (ckDbd) items.push(`<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:12px;text-align:center"><div style="font-size:0.68rem;color:#9f1239;text-transform:uppercase;font-weight:600;margin-bottom:4px">Total DBD 2025</div><div style="font-size:1.6rem;font-weight:700;color:#ef4444">${dbd.total_2025}</div></div>`);
+  if (ckStunting) items.push(`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:0.68rem;color:#14532d;text-transform:uppercase;font-weight:600;margin-bottom:4px">Stunting 2025</div><div style="font-size:1.6rem;font-weight:700;color:#22c55e">${stunting.avg_2025}%</div></div>`);
+  if (ckCampak) items.push(`<div style="background:#fffbeb;border:1px solid #fed7aa;border-radius:8px;padding:12px;text-align:center"><div style="font-size:0.68rem;color:#92400e;text-transform:uppercase;font-weight:600;margin-bottom:4px">Suspek Campak 2025</div><div style="font-size:1.6rem;font-weight:700;color:#f59e0b">${campak.total_suspek_2025}</div></div>`);
+  items.push(`<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;text-align:center"><div style="font-size:0.68rem;color:#1e40af;text-transform:uppercase;font-weight:600;margin-bottom:4px">Puskesmas</div><div style="font-size:1.6rem;font-weight:700;color:#3b82f6">25</div></div>`);
+  document.getElementById('cetak-kpi-row').innerHTML = items.join('');
+}
+
+function cetakSekarang() {
+  updateCetakPreview();
+  const ada = document.getElementById('ck-dbd').checked || document.getElementById('ck-campak').checked || document.getElementById('ck-stunting').checked;
+  if (!ada) { alert('Pilih minimal satu sub-bidang terlebih dahulu.'); return; }
+  window.print();
+}
+
+
+
+// ══════════════════════════════════════════════════════════════════
+// KOORDINAT PUSKESMAS SLEMAN
+// ══════════════════════════════════════════════════════════════════
+const PUSK_COORDS = {
+  'GAMPING I':[-7.785,110.318],'GAMPING 2':[-7.802,110.310],'GAMPING II':[-7.802,110.310],
+  'GODEAN I':[-7.772,110.302],'GODEAN 2':[-7.765,110.288],'GODEAN II':[-7.765,110.288],
+  'MOYUDAN':[-7.758,110.255],'MINGGIR':[-7.745,110.238],'SEYEGAN':[-7.712,110.278],
+  'MLATI I':[-7.758,110.352],'MLATI 2':[-7.748,110.368],'MLATI II':[-7.748,110.368],
+  'DEPOK I':[-7.752,110.385],'DEPOK 2':[-7.745,110.402],'DEPOK II':[-7.745,110.402],
+  'DEPOK 3':[-7.738,110.415],'DEPOK III':[-7.738,110.415],
+  'BERBAH':[-7.782,110.452],'PRAMBANAN':[-7.752,110.495],
+  'KALASAN':[-7.765,110.468],'NGEMPLAK I':[-7.692,110.428],'NGEMPLAK 2':[-7.680,110.440],
+  'NGAGLIK 1':[-7.718,110.402],'NGAGLIK 2':[-7.705,110.385],
+  'SLEMAN':[-7.712,110.355],'TEMPEL 1':[-7.685,110.325],'TEMPEL 2':[-7.695,110.312],
+  'TURI':[-7.678,110.368],'PAKEM':[-7.662,110.408],'CANGKRINGAN':[-7.675,110.458],
+};
+function getCoords(name) {
+  const u = name.toUpperCase().trim();
+  if (PUSK_COORDS[u]) return PUSK_COORDS[u];
+  for (const k of Object.keys(PUSK_COORDS))
+    if (u.includes(k) || k.includes(u.split(' ')[0])) return PUSK_COORDS[k];
+  return [-7.720, 110.355];
+}
+function mColor(v,hi,mid){return v>hi?'#ef4444':v>mid?'#f59e0b':'#22c55e';}
+function mCircle(ll,v,color,base){
+  return L.circleMarker(ll,{radius:Math.max(7,Math.min(26,base+v*0.22)),
+    fillColor:color,color:'white',weight:2,opacity:1,fillOpacity:0.82});
+}
+function mkMap(id){
+  const m=L.map(id).setView([-7.720,110.355],11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap',maxZoom:17}).addTo(m);
+  return m;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DBD EXTRA CHARTS + MAP
+// ══════════════════════════════════════════════════════════════════
+let dbdKapChart=null, dbdAgeLineChart=null, dbdMap=null, dbdMapLayers=[];
+let dbdDetailCache={};
+
+async function fetchDbdDetail(year) {
+  if (!dbdDetailCache[year]) dbdDetailCache[year]=await fetchJSON(`/api/dbd/pertahun/${year}`);
+  return dbdDetailCache[year];
+}
+
+async function initDbdExtraCharts() {
+  const d = await fetchDbdDetail(2023);
+  // Kapanewon bar
+  dbdKapChart = new Chart(document.getElementById('dbd-kap'),{
+    type:'bar', data:{labels:d.kapanewon_labels,datasets:[{label:'Kasus',data:d.kapanewon_total,
+      backgroundColor:'#ef4444',borderRadius:4}]},
+    options:{...baseOpts(),plugins:{legend:{display:false}}}
+  });
+  // Age line chart semua tahun sekaligus
+  const [d23,d24,d25] = await Promise.all([fetchDbdDetail(2023),fetchDbdDetail(2024),fetchDbdDetail(2025)]);
+  dbdAgeLineChart = new Chart(document.getElementById('dbd-age-line'),{
+    type:'line',
+    data:{labels:d23.age_labels,datasets:[
+      {label:'2023',data:d23.age_total,borderColor:'rgba(239,68,68,0.5)',backgroundColor:'rgba(239,68,68,0.05)',tension:0.4,pointRadius:4},
+      {label:'2024',data:d24.age_total,borderColor:'rgba(239,68,68,0.75)',backgroundColor:'rgba(239,68,68,0.05)',tension:0.4,pointRadius:4},
+      {label:'2025',data:d25.age_total,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',fill:true,tension:0.4,pointRadius:5},
+    ]},
+    options:baseOpts()
+  });
+  // Map
+  dbdMap = mkMap('dbd-map');
+  renderDbdMapMarkers(2023);
+}
+
+function renderDbdMapMarkers(year) {
+  dbdMapLayers.forEach(l=>dbdMap.removeLayer(l)); dbdMapLayers=[];
+  const d=dbdDetailCache[year];
+  if(!d) return;
+  d.puskesmas.forEach((name,i)=>{
+    const v=d.total[i], ll=getCoords(name), color=mColor(v,30,15);
+    const m=mCircle(ll,v,color,8);
+    m.bindPopup(`<div class="popup-title">📍 ${name}</div>
+      <div class="popup-row"><span>Kapanewon</span><span class="popup-val">${d.kapanewon[i]}</span></div>
+      <div class="popup-row"><span>Kasus ${year}</span><span class="popup-val" style="color:${color}">${v}</span></div>
+      <div class="popup-row"><span>Meninggal</span><span class="popup-val">${d.meninggal[i]}</span></div>
+      <div class="popup-row"><span>CFR</span><span class="popup-val">${d.cfr[i]}%</span></div>`);
+    m.addTo(dbdMap); dbdMapLayers.push(m);
+  });
+}
+
+async function switchDbdKap(year,btn) {
+  gYrDbdKap = year;
+  const d=await fetchDbdDetail(parseInt(year));
+  dbdKapChart.data.labels=d.kapanewon_labels;
+  dbdKapChart.data.datasets[0].data=d.kapanewon_total;
+  dbdKapChart.update();
+}
+
+async function switchDbdMap(year,btn) {
+  btn.closest('.map-yr-sel').querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  await fetchDbdDetail(parseInt(year));
+  renderDbdMapMarkers(parseInt(year));
+  dbdMap.invalidateSize();
+}
+
+// patch renderDbd
+const _rDbd=renderDbd;
+renderDbd=async function(){
+  await _rDbd();
+  setTimeout(async()=>{ await initDbdExtraCharts(); dbdMap&&dbdMap.invalidateSize(); },150);
+};
+
+// ══════════════════════════════════════════════════════════════════
+// STUNTING EXTRA CHARTS + MAP
+// ══════════════════════════════════════════════════════════════════
+let stuntingDonutChart=null, stuntingCakupanChart=null;
+let stuntingSppChart=null, stuntingSasaranChart=null;
+let stuntingTop5Chart=null, stuntingDeltaChart=null;
+let stuntingMap=null, stuntingMapLayers=[];
+let stuntingDetailCache={};
+
+async function fetchStuntingDetail(year) {
+  if (!stuntingDetailCache[year]) stuntingDetailCache[year]=await fetchJSON(`/api/stunting/pertahun/${year}`);
+  return stuntingDetailCache[year];
+}
+
+async function initStuntingExtraCharts() {
+  const d = await fetchStuntingDetail(2023);
+
+  // ── Donut distribusi status gizi ──
+  stuntingDonutChart=new Chart(document.getElementById('stunting-donut'),{
+    type:'doughnut',
+    data:{labels:['Sangat Pendek','Pendek','Normal','Tinggi'],
+      datasets:[{data:[d.kab_sp,d.kab_p,d.kab_normal,d.kab_tinggi],
+        backgroundColor:['#ef4444','#f59e0b','#22c55e','#3b82f6'],
+        borderWidth:2,borderColor:'white'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}},
+        tooltip:{backgroundColor:'#1e293b',titleColor:'#f8fafc',bodyColor:'#94a3b8'}}}
+  });
+
+  // ── Cakupan pemantauan full width ──
+  stuntingCakupanChart=new Chart(document.getElementById('stunting-cakupan'),{
+    type:'bar',
+    data:{labels:d.puskesmas,datasets:[{label:'Cakupan (%)',data:d.cakupan,
+      backgroundColor:d.cakupan.map(v=>v>=90?'#22c55e':v>=75?'#f59e0b':'#ef4444'),
+      borderRadius:3}]},
+    options:{...baseOpts(),
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`Cakupan: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{...baseOpts().scales,
+        x:{...baseOpts().scales.x,ticks:{font:{size:9},maxRotation:45}},
+        y:{...baseOpts().scales.y,min:0,max:105,ticks:{callback:v=>v+'%'}}}}
+  });
+
+  // ── SP vs Pendek stacked ──
+  stuntingSppChart=new Chart(document.getElementById('stunting-spp'),{
+    type:'bar',
+    data:{labels:d.puskesmas,datasets:[
+      {label:'Sangat Pendek',data:d.sangat_pendek_n,backgroundColor:'#ef4444',borderRadius:2},
+      {label:'Pendek',data:d.pendek_n,backgroundColor:'#f59e0b',borderRadius:2},
+    ]},
+    options:{...baseOpts(),scales:{
+      x:{...baseOpts().scales.x,stacked:true,ticks:{font:{size:9},maxRotation:45}},
+      y:{...baseOpts().scales.y,stacked:true}}}
+  });
+
+  // ── Top 5 Puskesmas Stunting Tertinggi 2025 ──
+  const d25_top = await fetchStuntingDetail(2025);
+  const d23_top = d; // sudah di-fetch
+  const top5 = d25_top.puskesmas
+    .map((p,i)=>{
+      const i23 = d23_top.puskesmas.indexOf(p);
+      return {p, v25:d25_top.stunting_pct[i], v23: i23>=0 ? d23_top.stunting_pct[i23] : 0};
+    })
+    .filter(t => t.v25 > 0)
+    .sort((a,b)=>b.v25-a.v25).slice(0,5);
+  stuntingTop5Chart=new Chart(document.getElementById('stunting-top5'),{
+    type:'bar',
+    data:{
+      labels:top5.map(t=>t.p),
+      datasets:[
+        {label:'2023 (%)',data:top5.map(t=>t.v23),backgroundColor:'rgba(34,197,94,0.3)',borderColor:'#22c55e',borderWidth:1.5,borderRadius:3},
+        {label:'2025 (%)',data:top5.map(t=>t.v25),backgroundColor:'#22c55e',borderRadius:3},
+      ]
+    },
+    options:{...baseOpts(),
+      indexAxis:'y',
+      plugins:{legend:{labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.x}%`}}},
+      scales:{x:{...baseOpts().scales.x,ticks:{callback:v=>v+'%'},min:0},
+              y:{...baseOpts().scales.y,ticks:{font:{size:11}}}}}
+  });
+
+  // ── Delta Stunting 2023→2025 ──
+  const _d23 = d23_top;
+  const _d25 = d25_top;
+  const delta = _d25.puskesmas.map((p,i)=>{
+    const i23 = _d23.puskesmas.indexOf(p);
+    const v23 = i23>=0 ? _d23.stunting_pct[i23] : 0;
+    return {p, d: parseFloat((_d25.stunting_pct[i]-v23).toFixed(2))};
+  }).sort((a,b)=>b.d-a.d);
+  stuntingDeltaChart=new Chart(document.getElementById('stunting-delta'),{
+    type:'bar',
+    data:{
+      labels:delta.map(t=>t.p),
+      datasets:[{
+        label:'Selisih 2023→2025 (%)',
+        data:delta.map(t=>t.d),
+        backgroundColor:delta.map(t=>t.d>0?'rgba(239,68,68,0.75)':'rgba(34,197,94,0.75)'),
+        borderColor:delta.map(t=>t.d>0?'#ef4444':'#22c55e'),
+        borderWidth:1.5, borderRadius:3
+      }]
+    },
+    options:{...baseOpts(),
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y>0?'+':''}${ctx.parsed.y}%`}}},
+      scales:{
+        x:{...baseOpts().scales.x,ticks:{font:{size:9},maxRotation:45}},
+        y:{...baseOpts().scales.y,ticks:{callback:v=>(v>0?'+':'')+v+'%'}}
+      }}
+  });
+
+  // ── Stunted vs Stunting 2025 ──
+  stuntingSasaranChart=new Chart(document.getElementById('stunting-sasaran'),{
+    type:'bar',
+    data:{
+      labels:_d25.puskesmas,
+      datasets:[
+        {label:'Stunted % (SP+P)',data:_d25.stunted_pct,backgroundColor:'rgba(239,68,68,0.35)',borderColor:'#ef4444',borderWidth:1.5,borderRadius:2},
+        {label:'Stunting %',data:_d25.stunting_pct,backgroundColor:'#ef4444',borderRadius:2},
+      ]
+    },
+    options:{...baseOpts(),
+      plugins:{legend:{labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+      scales:{
+        x:{...baseOpts().scales.x,ticks:{font:{size:9},maxRotation:45}},
+        y:{...baseOpts().scales.y,ticks:{callback:v=>v+'%'}}
+      }}
+  });
+
+  // ── Peta ──
+  stuntingMap=mkMap('stunting-map');
+  renderStuntingMapMarkers(2023);
+}
+
+function renderStuntingMapMarkers(year) {
+  stuntingMapLayers.forEach(l=>stuntingMap.removeLayer(l)); stuntingMapLayers=[];
+  const d=stuntingDetailCache[year];
+  if(!d) return;
+  d.puskesmas.forEach((name,i)=>{
+    const v=d.stunting_pct[i], ll=getCoords(name), color=mColor(v,10,5);
+    const m=mCircle(ll,v,color,10);
+    m.bindPopup(`<div class="popup-title">📍 ${name}</div>
+      <div class="popup-row"><span>Stunting ${year}</span><span class="popup-val" style="color:${color}">${v}%</span></div>
+      <div class="popup-row"><span>Sangat Pendek</span><span class="popup-val">${d.sangat_pendek_pct[i]}%</span></div>
+      <div class="popup-row"><span>Pendek</span><span class="popup-val">${d.pendek_pct[i]}%</span></div>
+      <div class="popup-row"><span>Cakupan Pantau</span><span class="popup-val">${d.cakupan[i]}%</span></div>`);
+    m.addTo(stuntingMap); stuntingMapLayers.push(m);
+  });
+}
+
+async function switchStuntingDonut(year,btn) {
+  gYrDonut = year;
+  const d=await fetchStuntingDetail(parseInt(year));
+  stuntingDonutChart.data.datasets[0].data=[d.kab_sp,d.kab_p,d.kab_normal,d.kab_tinggi];
+  stuntingDonutChart.update();
+}
+async function switchCakupan(year,btn) {
+  gYrCakupan = year;
+  const d=await fetchStuntingDetail(parseInt(year));
+  stuntingCakupanChart.data.labels=d.puskesmas;
+  stuntingCakupanChart.data.datasets[0].data=d.cakupan;
+  stuntingCakupanChart.data.datasets[0].backgroundColor=d.cakupan.map(v=>v>=90?'#22c55e':v>=75?'#f59e0b':'#ef4444');
+  stuntingCakupanChart.update();
+}
+async function switchSpP(year,btn) {
+  gYrSpP = year;
+  const d=await fetchStuntingDetail(parseInt(year));
+  stuntingSppChart.data.labels=d.puskesmas;
+  stuntingSppChart.data.datasets[0].data=d.sangat_pendek_n;
+  stuntingSppChart.data.datasets[1].data=d.pendek_n;
+  stuntingSppChart.update();
+}
+async function switchSasaran(year,btn) {
+  gYrSasaran = year;
+  const d=await fetchStuntingDetail(parseInt(year));
+  const cakupanPct = d.sasaran.map((s,i) => s > 0 ? parseFloat((d.dipantau[i]/s*100).toFixed(1)) : 0);
+  stuntingSasaranChart.data.labels=d.puskesmas;
+  stuntingSasaranChart.data.datasets[0].data=cakupanPct;
+  stuntingSasaranChart.data.datasets[0].backgroundColor=cakupanPct.map(v=>v>=90?'rgba(34,197,94,0.7)':v>=75?'rgba(245,158,11,0.7)':'rgba(239,68,68,0.7)');
+  stuntingSasaranChart.data.datasets[0].borderColor=cakupanPct.map(v=>v>=90?'#22c55e':v>=75?'#f59e0b':'#ef4444');
+  stuntingSasaranChart.update();
+}
+async function switchStuntingMap(year,btn) {
+  btn.closest('.map-yr-sel').querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  await fetchStuntingDetail(parseInt(year));
+  renderStuntingMapMarkers(parseInt(year));
+  stuntingMap&&stuntingMap.invalidateSize();
+}
+
+const _rStunting=renderStunting;
+renderStunting=async function(){
+  await _rStunting();
+  setTimeout(async()=>{ await initStuntingExtraCharts(); stuntingMap&&stuntingMap.invalidateSize(); },150);
+};
+
+// ══════════════════════════════════════════════════════════════════
+// CAMPAK EXTRA CHARTS + MAP
+// ══════════════════════════════════════════════════════════════════
+let campakAgeChart=null, campakKapChart=null;
+let campakMap=null, campakMapLayers=[];
+let campakDetailCache={};
+
+async function fetchCampakDetail(year) {
+  if(!campakDetailCache[year]) campakDetailCache[year]=await fetchJSON(`/api/campak/pertahun/${year}`);
+  return campakDetailCache[year];
+}
+
+async function initCampakExtraCharts() {
+  const d=await fetchCampakDetail(2023);
+  // Age grouped bar
+  campakAgeChart=new Chart(document.getElementById('campak-age'),{
+    type:'bar',
+    data:{labels:d.age_labels,datasets:[
+      {label:'Suspek',data:d.age_sp_total,backgroundColor:'rgba(245,158,11,0.4)',borderColor:'#f59e0b',borderWidth:1.5,borderRadius:3},
+      {label:'Positif',data:d.age_po_total,backgroundColor:'#f59e0b',borderRadius:3},
+    ]},
+    options:baseOpts()
+  });
+  // Kapanewon grouped
+  campakKapChart=new Chart(document.getElementById('campak-kap'),{
+    type:'bar',
+    data:{labels:d.kapanewon_labels,datasets:[
+      {label:'Suspek',data:d.kapanewon_suspek,backgroundColor:'rgba(245,158,11,0.35)',borderColor:'#f59e0b',borderWidth:1.5,borderRadius:3},
+      {label:'Positif',data:d.kapanewon_positif,backgroundColor:'#f59e0b',borderRadius:3},
+    ]},
+    options:baseOpts()
+  });
+  // Map
+  campakMap=mkMap('campak-map');
+  renderCampakMapMarkers(2023);
+}
+
+function renderCampakMapMarkers(year) {
+  campakMapLayers.forEach(l=>campakMap.removeLayer(l)); campakMapLayers=[];
+  const d=campakDetailCache[year];
+  if(!d) return;
+  d.puskesmas.forEach((name,i)=>{
+    const s=d.total_suspek[i], r=d.rate[i], p=d.total_positif[i];
+    const ll=getCoords(name), color=mColor(r,15,5);
+    const m=mCircle(ll,s,color,7);
+    m.bindPopup(`<div class="popup-title">📍 ${name}</div>
+      <div class="popup-row"><span>Kapanewon</span><span class="popup-val">${d.kapanewon[i]}</span></div>
+      <div class="popup-row"><span>Suspek ${year}</span><span class="popup-val">${s}</span></div>
+      <div class="popup-row"><span>Positif</span><span class="popup-val">${p}</span></div>
+      <div class="popup-row"><span>Positivity Rate</span><span class="popup-val" style="color:${color}">${r.toFixed(1)}%</span></div>`);
+    m.addTo(campakMap); campakMapLayers.push(m);
+  });
+}
+
+async function switchCampakAge(year,btn) {
+  gYrCampakAge = year;
+  const d=await fetchCampakDetail(parseInt(year));
+  campakAgeChart.data.datasets[0].data=d.age_sp_total;
+  campakAgeChart.data.datasets[1].data=d.age_po_total;
+  campakAgeChart.update();
+}
+async function switchCampakKap(year,btn) {
+  gYrCampakKap = year;
+  const d=await fetchCampakDetail(parseInt(year));
+  campakKapChart.data.labels=d.kapanewon_labels;
+  campakKapChart.data.datasets[0].data=d.kapanewon_suspek;
+  campakKapChart.data.datasets[1].data=d.kapanewon_positif;
+  campakKapChart.update();
+}
+async function switchCampakMap(year,btn) {
+  btn.closest('.map-yr-sel').querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  await fetchCampakDetail(parseInt(year));
+  renderCampakMapMarkers(parseInt(year));
+  campakMap&&campakMap.invalidateSize();
+}
+
+const _rCampak=renderCampak;
+renderCampak=async function(){
+  await _rCampak();
+  setTimeout(async()=>{ await initCampakExtraCharts(); campakMap&&campakMap.invalidateSize(); },150);
+};
+
+// ══════════════════════════════════════════════════════════════════
+// RINGKASAN
+// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// TOP 5 PUSKESMAS DBD
+// ══════════════════════════════════════════════════════════════════
+function renderTop5Dbd(mode) {
+  const dbd = window._dbdRekap4Top5;
+  if (!dbd) return;
+  const medals = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'];
+  let sorted, titleStr, subStr;
+  if (mode === 'rerata') {
+    sorted = dbd.puskesmas
+      .map((p,i) => ({ p, v25:dbd.tahun_2025[i], v24:dbd.tahun_2024[i], v23:dbd.tahun_2023[i],
+        avg: (dbd.tahun_2023[i]+dbd.tahun_2024[i]+dbd.tahun_2025[i])/3 }))
+      .sort((a,b) => b.avg - a.avg).slice(0,5);
+    titleStr = '📊 Top 5 Puskesmas — DBD (Rerata 3 Tahun)';
+    subStr = 'Berdasarkan rata-rata kasus DBD 2023–2025';
+  } else if (mode === 'akhir') {
+    sorted = dbd.puskesmas
+      .map((p,i) => ({ p, v25:dbd.tahun_2025[i], v24:dbd.tahun_2024[i], v23:dbd.tahun_2023[i],
+        avg: (dbd.tahun_2023[i]+dbd.tahun_2024[i]+dbd.tahun_2025[i])/3 }))
+      .sort((a,b) => b.v25 - a.v25).slice(0,5);
+    titleStr = '⚠️ Top 5 Puskesmas — DBD (Akhir Tahun 2025)';
+    subStr = 'Puskesmas dengan kasus DBD tertinggi di tahun terakhir (2025)';
+  } else {
+    sorted = dbd.puskesmas
+      .map((p,i) => ({ p, v25:dbd.tahun_2025[i], v24:dbd.tahun_2024[i], v23:dbd.tahun_2023[i],
+        avg: (dbd.tahun_2023[i]+dbd.tahun_2024[i]+dbd.tahun_2025[i])/3 }))
+      .sort((a,b) => b.v25 - a.v25).slice(0,5);
+    titleStr = '⚠️ Top 5 Puskesmas — DBD (Tertinggi 2025)';
+    subStr = 'Puskesmas dengan kasus DBD tertinggi tahun 2025';
+  }
+  document.getElementById('top5-title').textContent = titleStr;
+  document.getElementById('top5-sub').textContent = subStr;
+  document.getElementById('rkp-top-dbd').innerHTML = sorted.map((r,i) => {
+    const tren = r.v25 > r.v24 ? '<span style="color:#ef4444;font-weight:600">↑ Naik</span>' : '<span style="color:#22c55e;font-weight:600">↓ Turun</span>';
+    const avgStr = r.avg.toFixed(1);
+    return `<tr>
+      <td style="font-size:1.1rem">${medals[i]}</td>
+      <td><strong>${r.p}</strong></td>
+      <td><strong style="color:#ef4444">${r.v25}</strong></td>
+      <td>${r.v24}</td><td>${r.v23}</td>
+      <td style="color:#3b82f6;font-weight:600">${avgStr}</td>
+      <td>${tren}</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchTop5(mode, btn) {
+  btn.closest('div').querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTop5Dbd(mode);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LOGIN — VERIFIKASI 2 LANGKAH
+// ══════════════════════════════════════════════════════════════════
+const USERS = { 'admin': 'sakti2025', 'kadis': 'dinkes2025' };
+let otpCode = '';
+let loggedInUser = '';
+
+function buildOtpGrid() {
+  const grid = document.getElementById('otp-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const inp = document.createElement('input');
+    inp.className = 'otp-input'; inp.maxLength = 1; inp.type = 'text';
+    inp.inputMode = 'numeric'; inp.id = 'otp' + i;
+    inp.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/[^0-9]/g,'');
+      if (e.target.value && i < 5) document.getElementById('otp'+(i+1)).focus();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key==='Backspace' && !e.target.value && i>0) document.getElementById('otp'+(i-1)).focus();
+      if (e.key==='Enter') doStep2();
+    });
+    grid.appendChild(inp);
+  }
+}
+
+function togglePassVis() {
+  const inp = document.getElementById('inp-pass');
+  const ico = document.getElementById('toggle-pass');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    ico.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    ico.textContent = '👁';
+  }
+}
+
+function doStep1() {
+  const user = document.getElementById('inp-user').value.trim();
+  const pass = document.getElementById('inp-pass').value;
+  const err = document.getElementById('err1');
+  if (!USERS[user] || USERS[user] !== pass) {
+    err.style.display='block';
+    document.getElementById('inp-pass').classList.add('error');
+    return;
+  }
+  err.style.display='none';
+  loggedInUser = user;
+  otpCode = String(Math.floor(100000 + Math.random() * 900000));
+  document.getElementById('otp-display').textContent = otpCode;
+  document.getElementById('login-step1').classList.remove('active');
+  document.getElementById('login-step2').classList.add('active');
+  document.getElementById('sd1').classList.remove('active');
+  document.getElementById('sd1').classList.add('done');
+  document.getElementById('sl1').classList.add('done');
+  document.getElementById('sd2').classList.add('active');
+  buildOtpGrid();
+  setTimeout(()=>document.getElementById('otp0').focus(),100);
+}
+
+function doStep2() {
+  const entered = Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');
+  if (entered !== otpCode) {
+    document.getElementById('err2').style.display='block';
+    document.querySelectorAll('.otp-input').forEach(i=>i.style.borderColor='#ef4444');
+    return;
+  }
+  document.getElementById('sd2') && document.getElementById('sd2').classList.add('done');
+  document.getElementById('login-overlay').style.display='none';
+  const displayName = loggedInUser === 'kadis' ? 'Kepala Dinas' : 'Administrator';
+  document.getElementById('topbar-username').textContent = displayName;
+  document.getElementById('dd-name').textContent = displayName;
+  if (!window._appInited) { window._appInited = true; initApp(); }
+}
+
+function backToStep1() {
+  document.getElementById('login-step2').classList.remove('active');
+  document.getElementById('login-step1').classList.add('active');
+  document.getElementById('sd2').classList.remove('active');
+  document.getElementById('sd1').classList.remove('done');
+  document.getElementById('sd1').classList.add('active');
+  document.getElementById('sl1').classList.remove('done');
+  document.getElementById('err2').style.display='none';
+  document.getElementById('inp-pass').value='';
+  document.getElementById('inp-pass').classList.remove('error');
+}
+
+document.getElementById('inp-pass').addEventListener('keydown', e=>{
+  if(e.key==='Enter') doStep1();
+});
+document.getElementById('inp-user').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('inp-pass').focus();
+});
+
+// ── USER DROPDOWN + LOGOUT ────────────────────────────────────────
+function toggleUserMenu() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  const menu = document.getElementById('user-menu');
+  if (menu && !menu.contains(e.target))
+    document.getElementById('user-dropdown').classList.remove('open');
+});
+function doLogout() {
+  document.getElementById('user-dropdown').classList.remove('open');
+  loggedInUser=''; otpCode=''; window._appInited=false;
+  Object.keys(loaded).forEach(k=>loaded[k]=false);
+  document.getElementById('inp-user').value='';
+  document.getElementById('inp-pass').value='';
+  document.getElementById('inp-pass').classList.remove('error');
+  document.getElementById('err1').style.display='none';
+  document.getElementById('login-step2').classList.remove('active');
+  document.getElementById('login-step1').classList.add('active');
+  document.getElementById('sd1').classList.remove('done');
+  document.getElementById('sd1').classList.add('active');
+  document.getElementById('sl1').classList.remove('done');
+  document.getElementById('sd2').classList.remove('active');
+  document.getElementById('login-overlay').style.display='flex';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CATATAN PIMPINAN — CRUD
+// ══════════════════════════════════════════════════════════════════
+let catatanFilter = 'semua';
+let catatanData = [];
+
+async function showCatatan() {
+  setNavActive('nav-catatan');
+  showPage('catatan');
+  setBreadcrumb([{label:'Catatan Pimpinan'}]);
+  await loadCatatan();
+}
+
+async function loadCatatan() {
+  const url = catatanFilter === 'semua'
+    ? '/api/catatan'
+    : `/api/catatan?prioritas=${catatanFilter}`;
+  catatanData = await fetchJSON(url);
+  // invalidate cache so next load is fresh
+  delete cache[url]; delete cache['/api/catatan'];
+  catatanData = await (await fetch(url)).json();
+  renderCatatan(catatanData);
+}
+
+function renderCatatan(data) {
+  const list = document.getElementById('catatan-list');
+  if (!data.length) {
+    list.innerHTML = '<div class="catatan-empty"><div style="font-size:2rem;margin-bottom:10px">📋</div>Belum ada catatan untuk filter ini</div>';
+    return;
+  }
+  const priClass = { Tinggi:'pri-tinggi', Sedang:'pri-sedang', Rendah:'pri-rendah' };
+  const priEmoji = { Tinggi:'🔴', Sedang:'🟡', Rendah:'🟢' };
+  list.innerHTML = data.map(c => `
+    <div class="catatan-card" id="cc-${c.id}">
+      <div class="catatan-meta">
+        <span class="catatan-author">👤 ${c.penulis}</span>
+        <span class="catatan-prioritas ${priClass[c.prioritas]}">${priEmoji[c.prioritas]} ${c.prioritas}</span>
+        <span style="font-size:0.72rem;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:4px">${c.bidang}</span>
+        <span class="catatan-waktu">🕐 ${c.dibuat}${c.diubah ? ' · diedit '+c.diubah : ''}</span>
+      </div>
+      <div style="font-size:0.88rem;font-weight:700;color:#1e293b;margin-bottom:6px">${c.judul}</div>
+      <div class="catatan-isi">${c.isi}</div>
+      <div class="catatan-actions">
+        <button type="button" class="btn-edit" onclick="editCatatan(${c.id})">✏️ Edit</button>
+        <button type="button" class="btn-hapus" onclick="hapusCatatan(${c.id})">🗑 Hapus</button>
+      </div>
+    </div>`).join('');
+}
+
+function showFormCatatan() {
+  document.getElementById('catatan-edit-id').value = '';
+  document.getElementById('inp-judul').value = '';
+  document.getElementById('inp-isi').value = '';
+  document.getElementById('inp-prioritas').value = 'Sedang';
+  document.getElementById('inp-bidang').value = 'Umum';
+  document.getElementById('form-title').textContent = '✏️ Catatan Baru';
+  document.getElementById('catatan-form').style.display = '';
+  document.getElementById('btn-tambah-catatan').style.display = 'none';
+  document.getElementById('inp-judul').focus();
+}
+
+function tutupFormCatatan() {
+  document.getElementById('catatan-form').style.display = 'none';
+  document.getElementById('btn-tambah-catatan').style.display = '';
+  document.getElementById('catatan-edit-id').value = '';
+}
+
+function editCatatan(id) {
+  const c = catatanData.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('catatan-edit-id').value = id;
+  document.getElementById('inp-judul').value = c.judul;
+  document.getElementById('inp-isi').value = c.isi;
+  document.getElementById('inp-prioritas').value = c.prioritas;
+  document.getElementById('inp-bidang').value = c.bidang;
+  document.getElementById('form-title').textContent = '✏️ Edit Catatan';
+  document.getElementById('catatan-form').style.display = '';
+  document.getElementById('btn-tambah-catatan').style.display = 'none';
+  document.getElementById('inp-judul').focus();
+  document.getElementById('catatan-form').scrollIntoView({behavior:'smooth'});
+}
+
+async function simpanCatatan() {
+  const judul = document.getElementById('inp-judul').value.trim();
+  const isi   = document.getElementById('inp-isi').value.trim();
+  if (!judul || !isi) { alert('Judul dan isi catatan wajib diisi.'); return; }
+  const id = document.getElementById('catatan-edit-id').value;
+  const body = {
+    judul, isi,
+    prioritas: document.getElementById('inp-prioritas').value,
+    bidang: document.getElementById('inp-bidang').value,
+    penulis: loggedInUser === 'kadis' ? 'Kepala Dinas' : 'Admin',
+  };
+  const url  = id ? `/api/catatan/${id}` : '/api/catatan';
+  const meth = id ? 'PUT' : 'POST';
+  await fetch(url, { method:meth, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  tutupFormCatatan();
+  await loadCatatan();
+}
+
+async function hapusCatatan(id) {
+  if (!confirm('Hapus catatan ini?')) return;
+  await fetch(`/api/catatan/${id}`, { method:'DELETE' });
+  await loadCatatan();
+}
+
+async function filterCatatan(val, btn) {
+  btn.closest('div').querySelectorAll('.yr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  catatanFilter = val;
+  await loadCatatan();
+}
+
+function toggleCetakBidang(name) {
+  const body = document.getElementById('cbb-'+name);
+  const arrow = document.getElementById('cba-'+name);
+  const isOpen = body.classList.contains('open');
+  ['p2pl','kesmas','yankes','sdk'].forEach(b=>{
+    document.getElementById('cbb-'+b)?.classList.remove('open');
+    document.getElementById('cba-'+b)?.classList.remove('open');
+  });
+  if (!isOpen) { body.classList.add('open'); arrow.classList.add('open'); }
+}
+
+// ── INIT: tunggu login, data di-fetch setelah OTP berhasil ──────
+function initApp() { goHome(); }
+</script>
+</body>
+</html>
