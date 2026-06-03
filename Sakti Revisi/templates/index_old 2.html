@@ -320,95 +320,6 @@ tbody td { padding:8px 12px; color:#334155; }
 .ud-item.danger { color:#ef4444; }
 .ud-item.danger:hover { background:#fff1f2; }
 .ud-sep { height:1px; background:#f1f5f9; }
-
-/* ── ROLE SELECTOR (Login) ── */
-.role-selector { display:flex; gap:10px; margin-bottom:18px; }
-.role-card {
-  flex:1; border:2px solid #e2e8f0; border-radius:10px;
-  padding:14px 12px; cursor:pointer; transition:all 0.15s; text-align:center;
-  background:white;
-}
-.role-card:hover { border-color:#3b82f6; }
-.role-card.selected { border-color:#1e3a5f; background:#eff6ff; }
-.role-card-icon { font-size:1.6rem; margin-bottom:6px; }
-.role-card-label { font-size:0.82rem; font-weight:700; color:#1e293b; }
-.role-card-sub { font-size:0.68rem; color:#94a3b8; margin-top:2px; }
-
-/* ── ADMIN PANEL ── */
-#admin-overlay {
-  position:fixed; inset:0; background:#f0f2f5;
-  z-index:500; display:none; flex-direction:column;
-}
-#admin-overlay.visible { display:flex; }
-.admin-topbar {
-  background:#1e3a5f; color:white;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px; height:56px; flex-shrink:0;
-}
-.admin-body { display:flex; flex:1; overflow:hidden; }
-.admin-sidebar {
-  width:220px; background:#1a2e4a; color:white;
-  display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto;
-}
-.admin-main { flex:1; overflow-y:auto; padding:24px; }
-.admin-page { display:none; }
-.admin-page.active { display:block; animation:fadeIn .25s ease; }
-.input-card {
-  background:white; border:1px solid #e2e8f0; border-radius:10px;
-  padding:20px; margin-bottom:16px;
-}
-.input-card-title { font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:4px; }
-.input-card-sub { font-size:0.78rem; color:#64748b; margin-bottom:16px; }
-.form-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
-.form-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
-.form-group { display:flex; flex-direction:column; gap:4px; }
-.form-label { font-size:0.72rem; font-weight:600; color:#475569; }
-.form-input {
-  padding:8px 11px; border:1.5px solid #e2e8f0; border-radius:7px;
-  font-size:0.83rem; font-family:'Inter',sans-serif; color:#1e293b; outline:none;
-  transition:border-color .15s;
-}
-.form-input:focus { border-color:#3b82f6; }
-.form-select {
-  padding:8px 11px; border:1.5px solid #e2e8f0; border-radius:7px;
-  font-size:0.83rem; font-family:'Inter',sans-serif; color:#1e293b; outline:none;
-  background:white; cursor:pointer;
-}
-.btn-primary {
-  padding:9px 22px; background:#1e3a5f; color:white; border:none;
-  border-radius:7px; font-size:0.84rem; font-weight:600; cursor:pointer;
-  font-family:'Inter',sans-serif; transition:background .15s;
-}
-.btn-primary:hover { background:#1e40af; }
-.btn-success {
-  padding:9px 22px; background:#16a34a; color:white; border:none;
-  border-radius:7px; font-size:0.84rem; font-weight:600; cursor:pointer;
-  font-family:'Inter',sans-serif; transition:background .15s;
-}
-.btn-danger-sm {
-  padding:3px 10px; background:white; color:#ef4444;
-  border:1px solid #ef4444; border-radius:5px;
-  font-size:0.7rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;
-}
-.admin-table-wrap { overflow-x:auto; margin-top:14px; }
-.admin-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
-.admin-table thead th {
-  background:#f8fafc; color:#64748b; font-size:0.7rem; text-transform:uppercase;
-  letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid #e2e8f0; white-space:nowrap;
-}
-.admin-table tbody tr { border-bottom:1px solid #f1f5f9; }
-.admin-table tbody tr:hover { background:#f8fafc; }
-.admin-table tbody td { padding:7px 10px; color:#334155; }
-.toast {
-  position:fixed; bottom:24px; right:24px; background:#1e3a5f; color:white;
-  padding:12px 20px; border-radius:9px; font-size:0.83rem; font-weight:600;
-  box-shadow:0 4px 16px rgba(0,0,0,.2); z-index:9999;
-  animation:slideUp .3s ease; display:none;
-}
-.toast.ok { background:#16a34a; }
-.toast.err { background:#dc2626; }
-@keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-
 </style>
 </head>
 <body>
@@ -431,24 +342,9 @@ tbody td { padding:8px 12px; color:#334155; }
       <div class="step-dot" id="sd2"></div>
     </div>
 
-    <!-- STEP 1: Pilih Peran + Username + Password -->
+    <!-- STEP 1: Username + Password -->
     <div class="login-step active" id="login-step1">
-      <div style="font-size:0.82rem;font-weight:600;color:#475569;margin-bottom:12px">Langkah 1 — Pilih Peran &amp; Identitas</div>
-
-      <!-- Pilihan Peran -->
-      <div class="role-selector" id="role-selector">
-        <div class="role-card selected" id="role-card-kadis" onclick="selectRole('kadis')">
-          <div class="role-card-icon">🏛️</div>
-          <div class="role-card-label">Kepala Dinas</div>
-          <div class="role-card-sub">Akses dashboard &amp; laporan</div>
-        </div>
-        <div class="role-card" id="role-card-admin" onclick="selectRole('admin')">
-          <div class="role-card-icon">⚙️</div>
-          <div class="role-card-label">Administrator</div>
-          <div class="role-card-sub">Input &amp; kelola data</div>
-        </div>
-      </div>
-
+      <div style="font-size:0.82rem;font-weight:600;color:#475569;margin-bottom:16px">Langkah 1 — Identitas Pengguna</div>
       <label class="login-label">Username</label>
       <input class="login-input" id="inp-user" type="text" placeholder="Masukkan username" autocomplete="username">
       <label class="login-label">Password</label>
@@ -461,9 +357,8 @@ tbody td { padding:8px 12px; color:#334155; }
       </div>
       <div class="login-error" id="err1">❌ Username atau password salah</div>
       <button type="button" class="login-btn" onclick="doStep1()" style="margin-top:6px">Lanjut →</button>
-      <div style="margin-top:16px;padding:10px 13px;background:#f8fafc;border-radius:8px;font-size:0.72rem;color:#94a3b8;line-height:1.8" id="demo-hint">
-        Demo Kepala Dinas: <b style="color:#475569">kadis</b> / <b style="color:#475569">dinkes2025</b><br>
-        Demo Administrator: <b style="color:#475569">admin</b> / <b style="color:#475569">sakti2025</b>
+      <div style="margin-top:16px;padding:10px 13px;background:#f8fafc;border-radius:8px;font-size:0.72rem;color:#94a3b8;line-height:1.6">
+        Demo login: <b style="color:#475569">admin</b> / <b style="color:#475569">sakti2025</b>
       </div>
     </div>
 
@@ -509,7 +404,7 @@ tbody td { padding:8px 12px; color:#334155; }
       <div class="user-dropdown" id="user-dropdown">
         <div class="ud-header">
           <div class="ud-name" id="dd-name">Kepala Dinas</div>
-          <div class="ud-role" id="dd-role">Kepala Dinas · SAKTI</div>
+          <div class="ud-role">Administrator · SAKTI</div>
         </div>
         <div class="ud-sep"></div>
         <div class="ud-item danger" onclick="doLogout()">🚪&nbsp; Keluar (Logout)</div>
@@ -2830,17 +2725,6 @@ function filterCampakTable(year, btn) {
 const USERS = { 'admin': 'sakti2025', 'kadis': 'dinkes2025' };
 let otpCode = '';
 let loggedInUser = '';
-let selectedRole = 'kadis'; // default
-
-function selectRole(role) {
-  selectedRole = role;
-  document.getElementById('role-card-kadis').classList.toggle('selected', role === 'kadis');
-  document.getElementById('role-card-admin').classList.toggle('selected', role === 'admin');
-  // Pre-fill hint username
-  const uinp = document.getElementById('inp-user');
-  uinp.value = role === 'kadis' ? 'kadis' : 'admin';
-  document.getElementById('inp-pass').value = '';
-}
 
 function buildOtpGrid() {
   const grid = document.getElementById('otp-grid');
@@ -2881,11 +2765,7 @@ function doStep1() {
   const user = document.getElementById('inp-user').value.trim();
   const pass = document.getElementById('inp-pass').value;
   const err = document.getElementById('err1');
-  // Validate credentials AND role match
-  const isKadis = (user === 'kadis' && selectedRole === 'kadis');
-  const isAdmin = (user === 'admin' && selectedRole === 'admin');
-  if (!USERS[user] || USERS[user] !== pass || (!isKadis && !isAdmin)) {
-    err.textContent = '❌ Username, password, atau peran tidak sesuai';
+  if (!USERS[user] || USERS[user] !== pass) {
     err.style.display='block';
     document.getElementById('inp-pass').classList.add('error');
     return;
@@ -2913,18 +2793,10 @@ function doStep2() {
   }
   document.getElementById('sd2') && document.getElementById('sd2').classList.add('done');
   document.getElementById('login-overlay').style.display='none';
-  const isAdmin = (loggedInUser === 'admin');
-  const displayName = isAdmin ? 'Administrator' : 'Kepala Dinas';
-  const roleLabel = isAdmin ? 'Administrator · SAKTI' : 'Kepala Dinas · SAKTI';
+  const displayName = loggedInUser === 'kadis' ? 'Kepala Dinas' : 'Administrator';
   document.getElementById('topbar-username').textContent = displayName;
   document.getElementById('dd-name').textContent = displayName;
-  document.getElementById('dd-role').textContent = roleLabel;
-  if (isAdmin) {
-    document.getElementById('admin-overlay').classList.add('visible');
-    adminInitUsers();
-  } else {
-    if (!window._appInited) { window._appInited = true; initApp(); }
-  }
+  if (!window._appInited) { window._appInited = true; initApp(); }
 }
 
 function backToStep1() {
@@ -2957,11 +2829,7 @@ document.addEventListener('click', e=>{
 });
 function doLogout() {
   document.getElementById('user-dropdown').classList.remove('open');
-  document.getElementById('admin-overlay').classList.remove('visible');
-  loggedInUser=''; otpCode=''; window._appInited=false; selectedRole='kadis';
-  // Reset role cards
-  document.getElementById('role-card-kadis').classList.add('selected');
-  document.getElementById('role-card-admin').classList.remove('selected');
+  loggedInUser=''; otpCode=''; window._appInited=false;
   Object.keys(loaded).forEach(k=>loaded[k]=false);
   document.getElementById('inp-user').value='';
   document.getElementById('inp-pass').value='';
@@ -3102,534 +2970,6 @@ function toggleCetakBidang(name) {
 
 // ── INIT: tunggu login, data di-fetch setelah OTP berhasil ──────
 function initApp() { goHome(); }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN PANEL — JavaScript
-// ══════════════════════════════════════════════════════════════════
-let adminDbdData = [];
-let adminStuntingData = [];
-let adminCampakData = [];
-let adminUsers = [
-  { id:1, username:'kadis', nama:'Kepala Dinas Kesehatan', role:'kadis', status:'Aktif' },
-  { id:2, username:'admin', nama:'Administrator Sistem', role:'admin', status:'Aktif' },
-];
-let adminUserCounter = 3;
-
-function adminShowPage(page) {
-  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.admin-sidebar .nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('apage-' + page).classList.add('active');
-  const nav = document.getElementById('anav-' + page);
-  if (nav) nav.classList.add('active');
-}
-
-function showToast(msg, type='ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast ' + type;
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display='none'; }, 2800);
-}
-
-function nowStr() {
-  const d = new Date();
-  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ', ' +
-         d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-}
-
-// ── DBD ──────────────────────────────────────────────────────────
-function saveDbdData() {
-  const pusk = document.getElementById('dbd-puskesmas').value.trim();
-  if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
-  const ages = [0,1,2,3,4,5,6,7].map(i => parseInt(document.getElementById('dbd-a'+i).value)||0);
-  const rec = {
-    id: Date.now(),
-    tahun: document.getElementById('dbd-tahun').value,
-    kapanewon: document.getElementById('dbd-kapanewon').value,
-    puskesmas: pusk,
-    ages, total: ages.reduce((a,b)=>a+b,0),
-    laki: parseInt(document.getElementById('dbd-laki').value)||0,
-    perempuan: parseInt(document.getElementById('dbd-perempuan').value)||0,
-    meninggal: parseInt(document.getElementById('dbd-meninggal').value)||0,
-    dibuat: nowStr()
-  };
-  adminDbdData.unshift(rec);
-  renderDbdTable();
-  // reset age fields
-  [0,1,2,3,4,5,6,7].forEach(i => document.getElementById('dbd-a'+i).value=0);
-  document.getElementById('dbd-puskesmas').value='';
-  document.getElementById('dbd-laki').value=0;
-  document.getElementById('dbd-perempuan').value=0;
-  document.getElementById('dbd-meninggal').value=0;
-  showToast('✅ Data DBD berhasil disimpan');
-  // POST to backend
-  fetch('/api/admin/dbd', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
-}
-
-function renderDbdTable() {
-  const tbody = document.getElementById('dbd-table-body');
-  if (!adminDbdData.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>';
-    return;
-  }
-  tbody.innerHTML = adminDbdData.map(r => `
-    <tr>
-      <td>${r.tahun}</td><td>${r.kapanewon}</td><td>${r.puskesmas}</td>
-      <td><b>${r.total}</b></td><td>${r.laki}</td><td>${r.perempuan}</td>
-      <td>${r.meninggal}</td><td style="font-size:0.7rem;color:#94a3b8">${r.dibuat}</td>
-      <td><button class="btn-danger-sm" onclick="deleteDbdRow(${r.id})">Hapus</button></td>
-    </tr>`).join('');
-}
-
-function deleteDbdRow(id) {
-  adminDbdData = adminDbdData.filter(r => r.id !== id);
-  renderDbdTable();
-  showToast('🗑️ Data dihapus');
-}
-
-// ── STUNTING ─────────────────────────────────────────────────────
-function saveStuntingData() {
-  const pusk = document.getElementById('st-puskesmas').value.trim();
-  if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
-  const rec = {
-    id: Date.now(),
-    tahun: document.getElementById('st-tahun').value,
-    puskesmas: pusk,
-    sasaran: parseInt(document.getElementById('st-sasaran').value)||0,
-    dipantau: parseInt(document.getElementById('st-dipantau').value)||0,
-    sangat_pendek: parseInt(document.getElementById('st-sp').value)||0,
-    pendek: parseInt(document.getElementById('st-pendek').value)||0,
-    normal: parseInt(document.getElementById('st-normal').value)||0,
-    tinggi: parseInt(document.getElementById('st-tinggi').value)||0,
-    stunting: parseInt(document.getElementById('st-stunting').value)||0,
-    dibuat: nowStr()
-  };
-  adminStuntingData.unshift(rec);
-  renderStuntingTable();
-  ['st-puskesmas','st-sasaran','st-dipantau','st-sp','st-pendek','st-normal','st-tinggi','st-stunting']
-    .forEach(id => { const el=document.getElementById(id); el.value = el.type==='text'?'':0; });
-  showToast('✅ Data Stunting berhasil disimpan');
-  fetch('/api/admin/stunting', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
-}
-
-function renderStuntingTable() {
-  const tbody = document.getElementById('stunting-table-body');
-  if (!adminStuntingData.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>';
-    return;
-  }
-  tbody.innerHTML = adminStuntingData.map(r => `
-    <tr>
-      <td>${r.tahun}</td><td>${r.puskesmas}</td><td>${r.sasaran}</td>
-      <td>${r.dipantau}</td><td>${r.sangat_pendek}</td><td>${r.pendek}</td>
-      <td><b>${r.stunting}</b></td><td style="font-size:0.7rem;color:#94a3b8">${r.dibuat}</td>
-      <td><button class="btn-danger-sm" onclick="deleteStuntingRow(${r.id})">Hapus</button></td>
-    </tr>`).join('');
-}
-function deleteStuntingRow(id) {
-  adminStuntingData = adminStuntingData.filter(r => r.id !== id);
-  renderStuntingTable();
-  showToast('🗑️ Data dihapus');
-}
-
-// ── CAMPAK ────────────────────────────────────────────────────────
-function saveCampakData() {
-  const pusk = document.getElementById('ck-puskesmas').value.trim();
-  if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
-  const sp = [0,1,2,3,4,5].map(i => parseInt(document.getElementById('ck-sp'+i).value)||0);
-  const po = [0,1,2,3,4,5].map(i => parseInt(document.getElementById('ck-po'+i).value)||0);
-  const rec = {
-    id: Date.now(),
-    tahun: document.getElementById('ck-tahun').value,
-    kapanewon: document.getElementById('ck-kapanewon').value,
-    puskesmas: pusk,
-    suspek: sp.reduce((a,b)=>a+b,0),
-    positif: po.reduce((a,b)=>a+b,0),
-    dibuat: nowStr()
-  };
-  adminCampakData.unshift(rec);
-  renderCampakTable();
-  document.getElementById('ck-puskesmas').value='';
-  [0,1,2,3,4,5].forEach(i => { document.getElementById('ck-sp'+i).value=0; document.getElementById('ck-po'+i).value=0; });
-  showToast('✅ Data Campak berhasil disimpan');
-  fetch('/api/admin/campak', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
-}
-function renderCampakTable() {
-  const tbody = document.getElementById('campak-table-body');
-  if (!adminCampakData.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>';
-    return;
-  }
-  tbody.innerHTML = adminCampakData.map(r => `
-    <tr>
-      <td>${r.tahun}</td><td>${r.kapanewon}</td><td>${r.puskesmas}</td>
-      <td><b>${r.suspek}</b></td><td><b>${r.positif}</b></td>
-      <td style="font-size:0.7rem;color:#94a3b8">${r.dibuat}</td>
-      <td><button class="btn-danger-sm" onclick="deleteCampakRow(${r.id})">Hapus</button></td>
-    </tr>`).join('');
-}
-function deleteCampakRow(id) {
-  adminCampakData = adminCampakData.filter(r => r.id !== id);
-  renderCampakTable();
-  showToast('🗑️ Data dihapus');
-}
-
-// ── USERS ─────────────────────────────────────────────────────────
-function adminInitUsers() { renderUsersTable(); }
-function saveUserData() {
-  const uname = document.getElementById('usr-username').value.trim();
-  const pwd = document.getElementById('usr-password').value.trim();
-  const nama = document.getElementById('usr-nama').value.trim();
-  const role = document.getElementById('usr-role').value;
-  if (!uname || !pwd || !nama) { showToast('⚠️ Semua field wajib diisi', 'err'); return; }
-  if (adminUsers.find(u => u.username === uname)) { showToast('⚠️ Username sudah ada', 'err'); return; }
-  adminUsers.push({ id: adminUserCounter++, username: uname, nama, role, status:'Aktif' });
-  renderUsersTable();
-  document.getElementById('usr-username').value='';
-  document.getElementById('usr-password').value='';
-  document.getElementById('usr-nama').value='';
-  showToast('✅ Pengguna berhasil ditambahkan');
-}
-function renderUsersTable() {
-  const tbody = document.getElementById('users-table-body');
-  const roleLabel = r => r === 'kadis' ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600">Kepala Dinas</span>' : '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600">Administrator</span>';
-  tbody.innerHTML = adminUsers.map((u,i) => `
-    <tr>
-      <td>${i+1}</td><td><b>${u.username}</b></td><td>${u.nama}</td>
-      <td>${roleLabel(u.role)}</td>
-      <td><span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600">${u.status}</span></td>
-      <td>${u.id <= 2 ? '<span style="font-size:0.7rem;color:#94a3b8">Akun Sistem</span>' : '<button class=\"btn-danger-sm\" onclick=\"deleteUser('+u.id+')\" >Hapus</button>'}</td>
-    </tr>`).join('');
-}
-function deleteUser(id) {
-  adminUsers = adminUsers.filter(u => u.id !== id);
-  renderUsersTable();
-  showToast('🗑️ Pengguna dihapus');
-}
-
 </script>
-
-<!-- ════════ ADMIN OVERLAY ════════ -->
-<div id="admin-overlay">
-  <!-- Admin Topbar -->
-  <div class="admin-topbar">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="logo-box">SAKTI</div>
-      <div>
-        <div style="font-size:0.95rem;font-weight:600">Panel Administrator</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.55)">Manajemen Data · Dinas Kesehatan Kab. Sleman</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.8);font-size:0.8rem">
-        <div class="user-icon">⚙️</div>
-        <span>Administrator</span>
-      </div>
-      <button onclick="doLogout()" style="padding:6px 14px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">
-        Keluar
-      </button>
-    </div>
-  </div>
-
-  <!-- Admin Body -->
-  <div class="admin-body">
-    <!-- Admin Sidebar -->
-    <div class="admin-sidebar">
-      <div class="sidebar-section">Dashboard</div>
-      <div class="nav-item active" id="anav-home" onclick="adminShowPage('home')"><span class="icon">⊞</span> Beranda Admin</div>
-
-      <div class="sidebar-section">Input Data</div>
-      <div class="nav-item" id="anav-dbd" onclick="adminShowPage('dbd')"><span class="icon">🦟</span> Input DBD</div>
-      <div class="nav-item" id="anav-stunting" onclick="adminShowPage('stunting')"><span class="icon">📊</span> Input Stunting</div>
-      <div class="nav-item" id="anav-campak" onclick="adminShowPage('campak')"><span class="icon">💉</span> Input Campak</div>
-
-      <div class="sidebar-section">Kelola</div>
-      <div class="nav-item" id="anav-users" onclick="adminShowPage('users')"><span class="icon">👥</span> Kelola Pengguna</div>
-      <div class="sidebar-footer">SAKTI v1.0 · MIK A 2023<br>UGM Vocational College</div>
-    </div>
-
-    <!-- Admin Main Content -->
-    <div class="admin-main">
-
-      <!-- ─── PAGE: BERANDA ADMIN ─── -->
-      <div class="admin-page active" id="apage-home">
-        <div style="margin-bottom:20px">
-          <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:4px">Selamat Datang, Administrator</h1>
-          <p style="font-size:0.82rem;color:#64748b">Kelola dan perbarui data kesehatan untuk tampilan dashboard Kepala Dinas.</p>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="input-card" style="border-top:3px solid #ef4444;cursor:pointer" onclick="adminShowPage('dbd')">
-            <div style="font-size:2rem;margin-bottom:8px">🦟</div>
-            <div style="font-weight:700;color:#1e293b;margin-bottom:4px">Data DBD</div>
-            <div style="font-size:0.78rem;color:#64748b">Input data kasus Demam Berdarah Dengue per Puskesmas</div>
-            <div style="margin-top:12px;font-size:0.75rem;color:#3b82f6;font-weight:600">→ Kelola Data</div>
-          </div>
-          <div class="input-card" style="border-top:3px solid #f59e0b;cursor:pointer" onclick="adminShowPage('stunting')">
-            <div style="font-size:2rem;margin-bottom:8px">📊</div>
-            <div style="font-weight:700;color:#1e293b;margin-bottom:4px">Data Stunting</div>
-            <div style="font-size:0.78rem;color:#64748b">Input data gizi balita dan prevalensi stunting</div>
-            <div style="margin-top:12px;font-size:0.75rem;color:#3b82f6;font-weight:600">→ Kelola Data</div>
-          </div>
-          <div class="input-card" style="border-top:3px solid #8b5cf6;cursor:pointer" onclick="adminShowPage('campak')">
-            <div style="font-size:2rem;margin-bottom:8px">💉</div>
-            <div style="font-weight:700;color:#1e293b;margin-bottom:4px">Data Campak</div>
-            <div style="font-size:0.78rem;color:#64748b">Input data suspek dan positif campak per Puskesmas</div>
-            <div style="margin-top:12px;font-size:0.75rem;color:#3b82f6;font-weight:600">→ Kelola Data</div>
-          </div>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">📋 Panduan Input Data</div>
-          <div class="input-card-sub">Petunjuk penggunaan panel administrator SAKTI</div>
-          <div style="display:flex;flex-direction:column;gap:10px;font-size:0.82rem;color:#334155">
-            <div style="display:flex;gap:10px;align-items:flex-start"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;white-space:nowrap">Langkah 1</span> Pilih menu bidang data di sidebar kiri</div>
-            <div style="display:flex;gap:10px;align-items:flex-start"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;white-space:nowrap">Langkah 2</span> Isi formulir input data yang tersedia, pastikan semua field terisi dengan benar</div>
-            <div style="display:flex;gap:10px;align-items:flex-start"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;white-space:nowrap">Langkah 3</span> Klik tombol "Simpan Data" — data akan tersimpan ke database dan langsung diperbarui di dashboard</div>
-            <div style="display:flex;gap:10px;align-items:flex-start"><span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;white-space:nowrap">Catatan</span> Data yang diinput akan langsung terlihat pada dashboard Kepala Dinas setelah disimpan</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── PAGE: INPUT DBD ─── -->
-      <div class="admin-page" id="apage-dbd">
-        <div style="margin-bottom:20px">
-          <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:4px">🦟 Input Data DBD</h1>
-          <p style="font-size:0.82rem;color:#64748b">Tambah data kasus Demam Berdarah Dengue per Puskesmas</p>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Formulir Input Data DBD</div>
-          <div class="input-card-sub">Isi seluruh kolom yang tersedia lalu klik Simpan</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Tahun</label>
-              <select class="form-select" id="dbd-tahun">
-                <option>2023</option><option>2024</option><option selected>2025</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Kapanewon</label>
-              <select class="form-select" id="dbd-kapanewon">
-                <option>Depok</option><option>Gamping</option><option>Godean</option>
-                <option>Mlati</option><option>Ngaglik</option><option>Kalasan</option>
-                <option>Sleman</option><option>Prambanan</option><option>Lainnya</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Puskesmas</label>
-              <input class="form-input" id="dbd-puskesmas" type="text" placeholder="Nama Puskesmas">
-            </div>
-          </div>
-          <div style="font-size:0.75rem;font-weight:600;color:#475569;margin-bottom:8px">Jumlah Kasus per Kelompok Umur</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
-            <div class="form-group"><label class="form-label">&lt;1 tahun</label><input class="form-input" id="dbd-a0" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">1–4 tahun</label><input class="form-input" id="dbd-a1" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">5–9 tahun</label><input class="form-input" id="dbd-a2" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">10–14 tahun</label><input class="form-input" id="dbd-a3" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">15–19 tahun</label><input class="form-input" id="dbd-a4" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">20–44 tahun</label><input class="form-input" id="dbd-a5" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">45–59 tahun</label><input class="form-input" id="dbd-a6" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">≥60 tahun</label><input class="form-input" id="dbd-a7" type="number" min="0" value="0"></div>
-          </div>
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Jenis Kelamin: Laki-laki</label><input class="form-input" id="dbd-laki" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Jenis Kelamin: Perempuan</label><input class="form-input" id="dbd-perempuan" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Meninggal</label><input class="form-input" id="dbd-meninggal" type="number" min="0" value="0"></div>
-          </div>
-          <button class="btn-primary" onclick="saveDbdData()">💾 Simpan Data DBD</button>
-        </div>
-
-        <div class="input-card">
-          <div class="input-card-title">Data DBD Tersimpan</div>
-          <div class="input-card-sub">Riwayat data yang telah diinput melalui panel administrator</div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr>
-                <th>Tahun</th><th>Kapanewon</th><th>Puskesmas</th>
-                <th>Total Kasus</th><th>Laki-laki</th><th>Perempuan</th>
-                <th>Meninggal</th><th>Diinput</th><th>Aksi</th>
-              </tr></thead>
-              <tbody id="dbd-table-body">
-                <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── PAGE: INPUT STUNTING ─── -->
-      <div class="admin-page" id="apage-stunting">
-        <div style="margin-bottom:20px">
-          <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:4px">📊 Input Data Stunting</h1>
-          <p style="font-size:0.82rem;color:#64748b">Tambah data gizi balita PSG per Puskesmas</p>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Formulir Input Data Stunting / Gizi Balita</div>
-          <div class="input-card-sub">Isi seluruh kolom yang tersedia lalu klik Simpan</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Tahun</label>
-              <select class="form-select" id="st-tahun">
-                <option>2023</option><option>2024</option><option selected>2025</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Puskesmas</label>
-              <input class="form-input" id="st-puskesmas" type="text" placeholder="Nama Puskesmas">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Sasaran Balita</label>
-              <input class="form-input" id="st-sasaran" type="number" min="0" value="0">
-            </div>
-          </div>
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Dipantau</label><input class="form-input" id="st-dipantau" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Sangat Pendek (n)</label><input class="form-input" id="st-sp" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Pendek (n)</label><input class="form-input" id="st-pendek" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Normal (n)</label><input class="form-input" id="st-normal" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Tinggi (n)</label><input class="form-input" id="st-tinggi" type="number" min="0" value="0"></div>
-            <div class="form-group"><label class="form-label">Stunting (n)</label><input class="form-input" id="st-stunting" type="number" min="0" value="0"></div>
-          </div>
-          <button class="btn-primary" onclick="saveStuntingData()">💾 Simpan Data Stunting</button>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Data Stunting Tersimpan</div>
-          <div class="input-card-sub">Riwayat data yang telah diinput melalui panel administrator</div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr>
-                <th>Tahun</th><th>Puskesmas</th><th>Sasaran</th>
-                <th>Dipantau</th><th>Sangat Pendek</th><th>Pendek</th>
-                <th>Stunting</th><th>Diinput</th><th>Aksi</th>
-              </tr></thead>
-              <tbody id="stunting-table-body">
-                <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── PAGE: INPUT CAMPAK ─── -->
-      <div class="admin-page" id="apage-campak">
-        <div style="margin-bottom:20px">
-          <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:4px">💉 Input Data Campak</h1>
-          <p style="font-size:0.82rem;color:#64748b">Tambah data suspek dan kasus positif campak per Puskesmas</p>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Formulir Input Data Campak</div>
-          <div class="input-card-sub">Isi seluruh kolom yang tersedia lalu klik Simpan</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Tahun</label>
-              <select class="form-select" id="ck-tahun">
-                <option>2023</option><option>2024</option><option selected>2025</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Kapanewon</label>
-              <select class="form-select" id="ck-kapanewon">
-                <option>Depok</option><option>Gamping</option><option>Godean</option>
-                <option>Mlati</option><option>Ngaglik</option><option>Kalasan</option>
-                <option>Sleman</option><option>Prambanan</option><option>Lainnya</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Puskesmas</label>
-              <input class="form-input" id="ck-puskesmas" type="text" placeholder="Nama Puskesmas">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:14px">
-            <div>
-              <div style="font-size:0.75rem;font-weight:600;color:#475569;margin-bottom:8px">Suspek per Kelompok Umur</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="form-group"><label class="form-label">&lt;1 th</label><input class="form-input" id="ck-sp0" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">1–4 th</label><input class="form-input" id="ck-sp1" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">5–9 th</label><input class="form-input" id="ck-sp2" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">10–14 th</label><input class="form-input" id="ck-sp3" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">15–19 th</label><input class="form-input" id="ck-sp4" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">≥20 th</label><input class="form-input" id="ck-sp5" type="number" min="0" value="0"></div>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:0.75rem;font-weight:600;color:#475569;margin-bottom:8px">Positif per Kelompok Umur</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="form-group"><label class="form-label">&lt;1 th</label><input class="form-input" id="ck-po0" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">1–4 th</label><input class="form-input" id="ck-po1" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">5–9 th</label><input class="form-input" id="ck-po2" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">10–14 th</label><input class="form-input" id="ck-po3" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">15–19 th</label><input class="form-input" id="ck-po4" type="number" min="0" value="0"></div>
-                <div class="form-group"><label class="form-label">≥20 th</label><input class="form-input" id="ck-po5" type="number" min="0" value="0"></div>
-              </div>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="saveCampakData()">💾 Simpan Data Campak</button>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Data Campak Tersimpan</div>
-          <div class="input-card-sub">Riwayat data yang telah diinput melalui panel administrator</div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr>
-                <th>Tahun</th><th>Kapanewon</th><th>Puskesmas</th>
-                <th>Total Suspek</th><th>Total Positif</th><th>Diinput</th><th>Aksi</th>
-              </tr></thead>
-              <tbody id="campak-table-body">
-                <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── PAGE: KELOLA PENGGUNA ─── -->
-      <div class="admin-page" id="apage-users">
-        <div style="margin-bottom:20px">
-          <h1 style="font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:4px">👥 Kelola Pengguna</h1>
-          <p style="font-size:0.82rem;color:#64748b">Manajemen akun pengguna sistem SAKTI</p>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Tambah Pengguna Baru</div>
-          <div class="input-card-sub">Daftarkan akun baru untuk Kepala Dinas atau Administrator</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Username</label>
-              <input class="form-input" id="usr-username" type="text" placeholder="Masukkan username">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <input class="form-input" id="usr-password" type="password" placeholder="Masukkan password">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Peran</label>
-              <select class="form-select" id="usr-role">
-                <option value="kadis">Kepala Dinas</option>
-                <option value="admin">Administrator</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-grid">
-            <div class="form-group" style="grid-column:1/3">
-              <label class="form-label">Nama Lengkap</label>
-              <input class="form-input" id="usr-nama" type="text" placeholder="Nama lengkap pengguna">
-            </div>
-          </div>
-          <button class="btn-primary" onclick="saveUserData()">➕ Tambah Pengguna</button>
-        </div>
-        <div class="input-card">
-          <div class="input-card-title">Daftar Pengguna Sistem</div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>No</th><th>Username</th><th>Nama</th><th>Peran</th><th>Status</th><th>Aksi</th></tr></thead>
-              <tbody id="users-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /admin-main -->
-  </div><!-- /admin-body -->
-</div><!-- /admin-overlay -->
-
-<!-- TOAST NOTIFICATION -->
-<div class="toast" id="toast"></div>
-
 </body>
 </html>

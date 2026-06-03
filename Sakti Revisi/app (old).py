@@ -11,73 +11,11 @@ FILE_DBD      = 'analisis_dbd_per_kelompok_umur_updated.xlsx'
 FILE_STUNTING = 'gizi_balita_psg_2023_2025_updated.xlsx'
 FILE_CAMPAK   = 'template_campak_sleman_2023-2025.xlsx'
 
-# ── DATABASE ADAPTER (DUAL MODE: LOCAL SQLITE & VERCEL POSTGRES) ──
-class DBWrapper:
-    def __init__(self, conn, is_postgres):
-        self.conn = conn
-        self.is_postgres = is_postgres
-        
-    def execute(self, query, params=()):
-        if self.is_postgres:
-            # Menyesuaikan query SQLite agar otomatis kompatibel dengan PostgreSQL Cloud
-            query = query.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
-            query = query.replace('?', '%s')
-            
-            is_insert = query.strip().upper().startswith("INSERT")
-            if is_insert:
-                query = query.strip().rstrip(';') + " RETURNING id"
-                
-            cur = self.conn.cursor()
-            cur.execute(query, params)
-            
-            last_id = None
-            if is_insert:
-                res = cur.fetchone()
-                if res:
-                    last_id = res[0]
-                    
-            class CursorAdapter:
-                def __init__(self, cursor, last_id):
-                    self.cursor = cursor
-                    self.lastrowid = last_id
-                def fetchall(self):
-                    return self.cursor.fetchall()
-                def fetchone(self):
-                    return self.cursor.fetchone()
-                    
-            return CursorAdapter(cur, last_id)
-        else:
-            return self.conn.execute(query, params)
-            
-    def commit(self):
-        self.conn.commit()
-        
-    def close(self):
-        self.conn.close()
-        
-    def __enter__(self):
-        return self
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type:
-            self.conn.rollback()
-        else:
-            self.conn.commit()
-        self.conn.close()
-
+# ── INIT DATABASE ──────────────────────────────────────────────────
 def get_db():
-    postgres_url = os.environ.get("POSTGRES_URL")
-    if postgres_url:
-        import psycopg2
-        from psycopg2.extras import DictCursor
-        if postgres_url.startswith("postgres://"):
-            postgres_url = postgres_url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(postgres_url, cursor_factory=DictCursor)
-        return DBWrapper(conn, is_postgres=True)
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return DBWrapper(conn, is_postgres=False)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
     with get_db() as conn:
@@ -105,6 +43,10 @@ def avg(lst): return round(sum(lst)/len(lst), 2) if lst else 0
 # ═══════════════════════════════════════════════════════════════
 # DBD
 # ═══════════════════════════════════════════════════════════════
+# Kolom updated DBD year sheet:
+# 0=No, 1=Kapanewon, 2=Puskesmas, 3-10=Kel.Umur(<1,1-4,5-9,10-14,15-19,20-44,45-59,≥60)
+# 11=TOTAL(formula→None), 12=LAKI-LAKI, 13=PEREMPUAN, 14=MENINGGAL, 15=CFR
+
 def _read_dbd_year(tahun):
     """Baca satu sheet tahun DBD, kembalikan dict per puskesmas."""
     ws = load_wb(FILE_DBD)[str(tahun)]
@@ -133,6 +75,7 @@ def dbd_rekapitulasi():
     for yr in [2023, 2024, 2025]:
         data[yr] = _read_dbd_year(yr)
 
+    # Urutan puskesmas dari sheet 2023 (urutan asli)
     ws_order = load_wb(FILE_DBD)['2023']
     rows_order = list(ws_order.iter_rows(values_only=True))
     puskesmas = [str(r[2]).strip() for r in rows_order[5:30] if r[2]]
@@ -228,6 +171,12 @@ def dbd_pertahun(tahun):
 # ═══════════════════════════════════════════════════════════════
 # STUNTING
 # ═══════════════════════════════════════════════════════════════
+# Kolom updated Stunting year sheet (0-indexed):
+# 0=No, 1=Puskesmas, 2=Sasaran, 3=Dipantau,
+# 4=SP_n, 5=SP%, 6=P_n, 7=P%, 8=N_n, 9=N%, 10=T_n, 11=T%,
+# 12=Stunted_n, 13=Stunted%, 14=Stunting_n, 15=Stunting%
+# 16=Cakupan% (formula→None, hitung manual)
+
 def _read_stunting_year(tahun):
     ws = load_wb(FILE_STUNTING)[str(tahun)]
     rows = list(ws.iter_rows(values_only=True))
@@ -247,6 +196,7 @@ def _read_stunting_year(tahun):
         tinggi_n.append(si(row[10])); tinggi_pct.append(sf(row[11]))
         stunted_n.append(si(row[12]));  stunted_pct.append(sf(row[13]))
         stunting_n.append(si(row[14])); stunting_pct.append(sf(row[15]))
+        # Cakupan: hitung manual karena kolom formula = None
         cak = round(dip / sas * 100, 2) if sas > 0 else 0
         cakupan.append(cak)
 
@@ -259,8 +209,10 @@ def _read_stunting_year(tahun):
         'stunted_n': stunted_n, 'stunted_pct': stunted_pct,
         'stunting_n': stunting_n, 'stunting_pct': stunting_pct,
         'cakupan': cakupan,
+        # Kabupaten aggregate (untuk donut)
         'kab_sp': sum(sp_n), 'kab_p': sum(p_n),
         'kab_normal': sum(normal_n), 'kab_tinggi': sum(tinggi_n),
+        # Total row (hitung dari data)
         'total_sasaran': sum(sasaran), 'total_dipantau': sum(dipantau),
         'total_stunted': sum(stunted_n), 'total_stunting': sum(stunting_n),
         'avg_cakupan': avg(cakupan),
@@ -272,6 +224,7 @@ def stunting_rekapitulasi():
     d24 = _read_stunting_year(2024)
     d25 = _read_stunting_year(2025)
 
+    # Gunakan puskesmas dari 2023 sebagai urutan acuan
     puskesmas = d23['puskesmas']
 
     def get_pct(d, key, p):
@@ -296,7 +249,7 @@ def stunting_pertahun(tahun):
     return jsonify(d)
 
 # ═══════════════════════════════════════════════════════════════
-# CAMPAK
+# CAMPAK (tidak berubah, file tidak dimodifikasi)
 # ═══════════════════════════════════════════════════════════════
 @app.route('/api/campak/rekapitulasi')
 def campak_rekapitulasi():
@@ -405,125 +358,6 @@ def catatan_delete(cid):
         conn.execute('DELETE FROM catatan WHERE id=?', (cid,))
         conn.commit()
     return jsonify({'deleted': cid})
-
-# ═══════════════════════════════════════════════════════════════
-# ADMIN INPUT — DBD / STUNTING / CAMPAK
-# ═══════════════════════════════════════════════════════════════
-def init_admin_db():
-    with get_db() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS admin_dbd (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                tahun       TEXT, kapanewon TEXT, puskesmas TEXT,
-                usia_0      INTEGER DEFAULT 0, usia_1  INTEGER DEFAULT 0,
-                usia_2      INTEGER DEFAULT 0, usia_3  INTEGER DEFAULT 0,
-                usia_4      INTEGER DEFAULT 0, usia_5  INTEGER DEFAULT 0,
-                usia_6      INTEGER DEFAULT 0, usia_7  INTEGER DEFAULT 0,
-                laki        INTEGER DEFAULT 0, perempuan INTEGER DEFAULT 0,
-                meninggal   INTEGER DEFAULT 0,
-                dibuat      TEXT
-            )''')
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS admin_stunting (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                tahun       TEXT, puskesmas TEXT,
-                sasaran     INTEGER DEFAULT 0, dipantau  INTEGER DEFAULT 0,
-                sangat_pendek INTEGER DEFAULT 0, pendek  INTEGER DEFAULT 0,
-                normal      INTEGER DEFAULT 0, tinggi   INTEGER DEFAULT 0,
-                stunting    INTEGER DEFAULT 0,
-                dibuat      TEXT
-            )''')
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS admin_campak (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                tahun       TEXT, kapanewon TEXT, puskesmas TEXT,
-                suspek      INTEGER DEFAULT 0, positif  INTEGER DEFAULT 0,
-                dibuat      TEXT
-            )''')
-        conn.commit()
-
-init_admin_db()
-
-@app.route('/api/admin/dbd', methods=['GET','POST'])
-def admin_dbd():
-    if request.method == 'POST':
-        d = request.json
-        now = datetime.datetime.now().strftime('%d %b %Y, %H:%M')
-        ages = d.get('ages', [0]*8)
-        with get_db() as conn:
-            conn.execute(
-                '''INSERT INTO admin_dbd
-                   (tahun,kapanewon,puskesmas,usia_0,usia_1,usia_2,usia_3,usia_4,usia_5,usia_6,usia_7,laki,perempuan,meninggal,dibuat)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                (d.get('tahun'), d.get('kapanewon'), d.get('puskesmas'),
-                 ages[0],ages[1],ages[2],ages[3],ages[4],ages[5],ages[6],ages[7],
-                 d.get('laki',0), d.get('perempuan',0), d.get('meninggal',0), now)
-            )
-            conn.commit()
-        return jsonify({'status': 'ok'}), 201
-    with get_db() as conn:
-        rows = conn.execute('SELECT * FROM admin_dbd ORDER BY id DESC').fetchall()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/api/admin/dbd/<int:rid>', methods=['DELETE'])
-def admin_dbd_delete(rid):
-    with get_db() as conn:
-        conn.execute('DELETE FROM admin_dbd WHERE id=?', (rid,))
-        conn.commit()
-    return jsonify({'deleted': rid})
-
-@app.route('/api/admin/stunting', methods=['GET','POST'])
-def admin_stunting():
-    if request.method == 'POST':
-        d = request.json
-        now = datetime.datetime.now().strftime('%d %b %Y, %H:%M')
-        with get_db() as conn:
-            conn.execute(
-                '''INSERT INTO admin_stunting
-                   (tahun,puskesmas,sasaran,dipantau,sangat_pendek,pendek,normal,tinggi,stunting,dibuat)
-                   VALUES (?,?,?,?,?,?,?,?,?,?)''',
-                (d.get('tahun'), d.get('puskesmas'),
-                 d.get('sasaran',0), d.get('dipantau',0), d.get('sangat_pendek',0),
-                 d.get('pendek',0), d.get('normal',0), d.get('tinggi',0), d.get('stunting',0), now)
-            )
-            conn.commit()
-        return jsonify({'status': 'ok'}), 201
-    with get_db() as conn:
-        rows = conn.execute('SELECT * FROM admin_stunting ORDER BY id DESC').fetchall()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/api/admin/stunting/<int:rid>', methods=['DELETE'])
-def admin_stunting_delete(rid):
-    with get_db() as conn:
-        conn.execute('DELETE FROM admin_stunting WHERE id=?', (rid,))
-        conn.commit()
-    return jsonify({'deleted': rid})
-
-@app.route('/api/admin/campak', methods=['GET','POST'])
-def admin_campak():
-    if request.method == 'POST':
-        d = request.json
-        now = datetime.datetime.now().strftime('%d %b %Y, %H:%M')
-        with get_db() as conn:
-            conn.execute(
-                '''INSERT INTO admin_campak
-                   (tahun,kapanewon,puskesmas,suspek,positif,dibuat)
-                   VALUES (?,?,?,?,?,?)''',
-                (d.get('tahun'), d.get('kapanewon'), d.get('puskesmas'),
-                 d.get('suspek',0), d.get('positif',0), now)
-            )
-            conn.commit()
-        return jsonify({'status': 'ok'}), 201
-    with get_db() as conn:
-        rows = conn.execute('SELECT * FROM admin_campak ORDER BY id DESC').fetchall()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/api/admin/campak/<int:rid>', methods=['DELETE'])
-def admin_campak_delete(rid):
-    with get_db() as conn:
-        conn.execute('DELETE FROM admin_campak WHERE id=?', (rid,))
-        conn.commit()
-    return jsonify({'deleted': rid})
 
 @app.route('/')
 def index(): return render_template('index.html')
