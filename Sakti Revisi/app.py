@@ -66,7 +66,7 @@ class DBWrapper:
         self.conn.close()
 
 def get_db():
-    postgres_url = os.environ.get("POSTGRES_URL")
+    postgres_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
     if postgres_url:
         import psycopg2
         from psycopg2.extras import DictCursor
