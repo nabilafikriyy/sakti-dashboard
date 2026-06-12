@@ -2922,6 +2922,7 @@ function doStep2() {
   if (isAdmin) {
     document.getElementById('admin-overlay').classList.add('visible');
     adminInitUsers();
+    adminInitData();
   } else {
     if (!window._appInited) { window._appInited = true; initApp(); }
   }
@@ -3136,13 +3137,29 @@ function nowStr() {
          d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 
+// ── INIT: Load semua data admin dari backend saat login ───────────
+async function adminInitData() {
+  try {
+    const [dbd, st, ck] = await Promise.all([
+      fetch('/api/admin/dbd').then(r => r.json()),
+      fetch('/api/admin/stunting').then(r => r.json()),
+      fetch('/api/admin/campak').then(r => r.json()),
+    ]);
+    adminDbdData = dbd;
+    adminStuntingData = st;
+    adminCampakData = ck;
+    renderDbdTable();
+    renderStuntingTable();
+    renderCampakTable();
+  } catch(e) { console.warn('adminInitData error', e); }
+}
+
 // ── DBD ──────────────────────────────────────────────────────────
-function saveDbdData() {
+async function saveDbdData() {
   const pusk = document.getElementById('dbd-puskesmas').value.trim();
   if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
   const ages = [0,1,2,3,4,5,6,7].map(i => parseInt(document.getElementById('dbd-a'+i).value)||0);
   const rec = {
-    id: Date.now(),
     tahun: document.getElementById('dbd-tahun').value,
     kapanewon: document.getElementById('dbd-kapanewon').value,
     puskesmas: pusk,
@@ -3150,9 +3167,14 @@ function saveDbdData() {
     laki: parseInt(document.getElementById('dbd-laki').value)||0,
     perempuan: parseInt(document.getElementById('dbd-perempuan').value)||0,
     meninggal: parseInt(document.getElementById('dbd-meninggal').value)||0,
-    dibuat: nowStr()
   };
-  adminDbdData.unshift(rec);
+  try {
+    await fetch('/api/admin/dbd', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)});
+    // Reload dari backend supaya id-nya benar dan data selalu sinkron
+    adminDbdData = await fetch('/api/admin/dbd').then(r => r.json());
+  } catch(e) {
+    adminDbdData.unshift({...rec, id: Date.now(), dibuat: nowStr()});
+  }
   renderDbdTable();
   // reset age fields
   [0,1,2,3,4,5,6,7].forEach(i => document.getElementById('dbd-a'+i).value=0);
@@ -3161,8 +3183,6 @@ function saveDbdData() {
   document.getElementById('dbd-perempuan').value=0;
   document.getElementById('dbd-meninggal').value=0;
   showToast('✅ Data DBD berhasil disimpan');
-  // POST to backend
-  fetch('/api/admin/dbd', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
 }
 
 function renderDbdTable() {
@@ -3171,27 +3191,40 @@ function renderDbdTable() {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px">Belum ada data yang diinput</td></tr>';
     return;
   }
-  tbody.innerHTML = adminDbdData.map(r => `
-    <tr>
+  tbody.innerHTML = adminDbdData.map(r => {
+    // total bisa dari field 'total' (baru diinput) atau hitung dari kolom usia (load dari DB)
+    const total = (r.total !== undefined && r.total !== null)
+      ? r.total
+      : [r.usia_0,r.usia_1,r.usia_2,r.usia_3,r.usia_4,r.usia_5,r.usia_6,r.usia_7]
+          .reduce((a,b)=>a+(parseInt(b)||0),0);
+    return `<tr>
       <td>${r.tahun}</td><td>${r.kapanewon}</td><td>${r.puskesmas}</td>
-      <td><b>${r.total}</b></td><td>${r.laki}</td><td>${r.perempuan}</td>
+      <td><b>${total}</b></td><td>${r.laki}</td><td>${r.perempuan}</td>
       <td>${r.meninggal}</td><td style="font-size:0.7rem;color:#94a3b8">${r.dibuat}</td>
       <td><button class="btn-danger-sm" onclick="deleteDbdRow(${r.id})">Hapus</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function deleteDbdRow(id) {
-  adminDbdData = adminDbdData.filter(r => r.id !== id);
-  renderDbdTable();
-  showToast('🗑️ Data dihapus');
+  fetch('/api/admin/dbd/' + id, {method:'DELETE'})
+    .then(async () => {
+      adminDbdData = await fetch('/api/admin/dbd').then(r => r.json());
+      renderDbdTable();
+      showToast('🗑️ Data dihapus');
+    })
+    .catch(() => {
+      adminDbdData = adminDbdData.filter(r => r.id !== id);
+      renderDbdTable();
+      showToast('🗑️ Data dihapus');
+    });
 }
 
 // ── STUNTING ─────────────────────────────────────────────────────
-function saveStuntingData() {
+async function saveStuntingData() {
   const pusk = document.getElementById('st-puskesmas').value.trim();
   if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
   const rec = {
-    id: Date.now(),
     tahun: document.getElementById('st-tahun').value,
     puskesmas: pusk,
     sasaran: parseInt(document.getElementById('st-sasaran').value)||0,
@@ -3201,14 +3234,17 @@ function saveStuntingData() {
     normal: parseInt(document.getElementById('st-normal').value)||0,
     tinggi: parseInt(document.getElementById('st-tinggi').value)||0,
     stunting: parseInt(document.getElementById('st-stunting').value)||0,
-    dibuat: nowStr()
   };
-  adminStuntingData.unshift(rec);
+  try {
+    await fetch('/api/admin/stunting', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)});
+    adminStuntingData = await fetch('/api/admin/stunting').then(r => r.json());
+  } catch(e) {
+    adminStuntingData.unshift({...rec, id: Date.now(), dibuat: nowStr()});
+  }
   renderStuntingTable();
   ['st-puskesmas','st-sasaran','st-dipantau','st-sp','st-pendek','st-normal','st-tinggi','st-stunting']
     .forEach(id => { const el=document.getElementById(id); el.value = el.type==='text'?'':0; });
   showToast('✅ Data Stunting berhasil disimpan');
-  fetch('/api/admin/stunting', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
 }
 
 function renderStuntingTable() {
@@ -3226,32 +3262,42 @@ function renderStuntingTable() {
     </tr>`).join('');
 }
 function deleteStuntingRow(id) {
-  adminStuntingData = adminStuntingData.filter(r => r.id !== id);
-  renderStuntingTable();
-  showToast('🗑️ Data dihapus');
+  fetch('/api/admin/stunting/' + id, {method:'DELETE'})
+    .then(async () => {
+      adminStuntingData = await fetch('/api/admin/stunting').then(r => r.json());
+      renderStuntingTable();
+      showToast('🗑️ Data dihapus');
+    })
+    .catch(() => {
+      adminStuntingData = adminStuntingData.filter(r => r.id !== id);
+      renderStuntingTable();
+      showToast('🗑️ Data dihapus');
+    });
 }
 
 // ── CAMPAK ────────────────────────────────────────────────────────
-function saveCampakData() {
+async function saveCampakData() {
   const pusk = document.getElementById('ck-puskesmas').value.trim();
   if (!pusk) { showToast('⚠️ Nama Puskesmas wajib diisi', 'err'); return; }
   const sp = [0,1,2,3,4,5].map(i => parseInt(document.getElementById('ck-sp'+i).value)||0);
   const po = [0,1,2,3,4,5].map(i => parseInt(document.getElementById('ck-po'+i).value)||0);
   const rec = {
-    id: Date.now(),
     tahun: document.getElementById('ck-tahun').value,
     kapanewon: document.getElementById('ck-kapanewon').value,
     puskesmas: pusk,
     suspek: sp.reduce((a,b)=>a+b,0),
     positif: po.reduce((a,b)=>a+b,0),
-    dibuat: nowStr()
   };
-  adminCampakData.unshift(rec);
+  try {
+    await fetch('/api/admin/campak', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)});
+    adminCampakData = await fetch('/api/admin/campak').then(r => r.json());
+  } catch(e) {
+    adminCampakData.unshift({...rec, id: Date.now(), dibuat: nowStr()});
+  }
   renderCampakTable();
   document.getElementById('ck-puskesmas').value='';
   [0,1,2,3,4,5].forEach(i => { document.getElementById('ck-sp'+i).value=0; document.getElementById('ck-po'+i).value=0; });
   showToast('✅ Data Campak berhasil disimpan');
-  fetch('/api/admin/campak', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}).catch(()=>{});
 }
 function renderCampakTable() {
   const tbody = document.getElementById('campak-table-body');
@@ -3268,9 +3314,17 @@ function renderCampakTable() {
     </tr>`).join('');
 }
 function deleteCampakRow(id) {
-  adminCampakData = adminCampakData.filter(r => r.id !== id);
-  renderCampakTable();
-  showToast('🗑️ Data dihapus');
+  fetch('/api/admin/campak/' + id, {method:'DELETE'})
+    .then(async () => {
+      adminCampakData = await fetch('/api/admin/campak').then(r => r.json());
+      renderCampakTable();
+      showToast('🗑️ Data dihapus');
+    })
+    .catch(() => {
+      adminCampakData = adminCampakData.filter(r => r.id !== id);
+      renderCampakTable();
+      showToast('🗑️ Data dihapus');
+    });
 }
 
 // ── USERS ─────────────────────────────────────────────────────────
